@@ -54,6 +54,10 @@ const HomePage = () => {
     getEvent();
   }, []);
 
+  useEffect(() => {
+    console.log("Events are: ", getEventsDetails);
+  }, [getEventsDetails]);
+
   return (
     <>
       <div className="pt-[4.75rem] lg:pt-[5.25rem] overflow-hidden">
@@ -61,7 +65,7 @@ const HomePage = () => {
         <Hero />
         <Sponser />
         <Benefits />
-        
+
         {/* Events */}
         <EventsLayought idVal="tec" title="Technical Events" roadmap={getEventsDetails.technical} />
         <EventsLayought idVal="cul" title="Cultural Events" roadmap={getEventsDetails.cultural} />
