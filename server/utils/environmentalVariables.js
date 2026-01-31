@@ -40,7 +40,7 @@ Razorpay_key = paymentKeysEnv[ENV].Razorpay_key;
 Razorpay_secret = paymentKeysEnv[ENV].Razorpay_secret;
 
 if (ENV === 'production') {
-    domainName = ["https://kairos.spcpegasus.com", 'http://localhost:5173', 'http://192.168.2.244:3000']
+    domainName = "https://kairos.spcpegasus.com";
 } else {
     domainName = 'http://localhost:5173';
 }

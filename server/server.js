@@ -27,22 +27,19 @@ async function startServer() {
         await startAllProcesses();  // ✅ Ensure this completes before server starts
         console.log("✅ startAllProcesses completed successfully!");
 
-        app.use((req, res, next) => {
-            if (req.url.startsWith('/api/')) {
-                req.url = req.url.replace('/api', ''); // ✅ Removes only `/api`, keeps the rest
-            }
-            next();
-        });
+        // Serve static files from server/public
+        app.use(express.static(path.join(__dirname, 'public')));
 
+        // Catch-all route to serve index.html for unmatched routes (SPA)
+        app.get('*', (req, res) => {
+            res.sendFile(path.join(__dirname, 'public', 'index.html'));
+        });
 
         // Initialize authentication middleware
         initializeAuth(app);
 
         // Set up authentication routes
         setupAuthRoutes(app);
-
-        // Create server
-        const server = http.createServer(app);
 
         // CORS
         const corsOptions = {
@@ -81,20 +78,22 @@ async function startServer() {
         app.use(helmet());
         app.use(express.json());
 
-        // Routes
+
+        // API Routes (original paths)
         app.use('/', homePageDetails);
         app.use('/userRout', userDefinedRouts);
         app.use('/payment', razorpayRouter);
         app.use('/coordinator', checkIfCoordinator, coordinatorRouter);
 
-        // ✅ Endpoint to View All Routes
+        // Endpoint to View All Routes
         app.get('/routes', (req, res) => {
             res.json(listEndpoints(app));
         });
 
-        app.get('*', (req, res) => {
-            res.sendFile(path.join(__dirname, 'public', 'index.html'));
-        });
+
+
+        // Create server
+        const server = http.createServer(app);
 
         // Start Server after `startAllProcesses()` completes
         server.listen(PORT_NO, () => console.log(`🚀 Server is running on http://localhost:${PORT_NO} & Node Env ${process.env.NODE_ENV}`));
