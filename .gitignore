@@ -41,7 +41,6 @@ dist-ssr
 *.sln
 *.sw?
 
-serverURL_link.js
 node_modules
 dist
 .env
