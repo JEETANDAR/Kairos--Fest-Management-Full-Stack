@@ -4,8 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1", 
-    "perdeploy": "npm install --prefix client && npm install --prefix server"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "concurrently \"npm run dev --prefix client\" \"npm run server --prefix server\"",
+    "perdeploy": "npm install --prefix client && npm install --prefix server",
+    "deploy": "npm start --prefix server"
   },
   "keywords": [],
   "author": "",
