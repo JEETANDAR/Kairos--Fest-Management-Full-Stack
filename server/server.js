@@ -92,6 +92,10 @@ async function startServer() {
             res.json(listEndpoints(app));
         });
 
+        app.get('*', (req, res) => {
+            res.sendFile(path.join(__dirname, 'public', 'index.html'));
+        });
+
         // Start Server after `startAllProcesses()` completes
         server.listen(PORT_NO, () => console.log(`🚀 Server is running on http://localhost:${PORT_NO} & Node Env ${process.env.NODE_ENV}`));
 
