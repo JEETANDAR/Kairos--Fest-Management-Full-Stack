@@ -23,7 +23,7 @@ export default defineConfig({
     }
   },
   build: {
-    outDir: 'dist', // ✅ Ensures build output goes to "dist/"
+    outDir: '../server/public', // ✅ Ensures build output goes to "dist/"
     emptyOutDir: true, // ✅ Cleans old build files before each build
     rollupOptions: {
       output: {
