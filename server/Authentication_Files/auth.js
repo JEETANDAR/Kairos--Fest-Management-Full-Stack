@@ -72,10 +72,10 @@ function initializeAuth(app) {
 
 // Authentication Routes
 function setupAuthRoutes(app) {
-    app.get('/auth/google', passport.authenticate('google', { scope: ['email'] }));
+    app.get('/google', passport.authenticate('google', { scope: ['email'] }));
 
-    app.get('/auth/google/callback',
-        passport.authenticate('google', { failureRedirect: '/auth/failure' }),
+    app.get('/google/callback',
+        passport.authenticate('google', { failureRedirect: '/failure' }),
         async (req, res) => {
             try {
                 const hostDomainName = req.get('host');
@@ -132,12 +132,12 @@ function setupAuthRoutes(app) {
 
 
     // Handle authentication failure
-    app.get('/auth/failure', (req, res) => {
+    app.get('/failure', (req, res) => {
         res.status(401).json({ success: false, message: "Google authentication failed" });
     });
 
     // Fetch user session data
-    app.get('/auth/user', (req, res) => {
+    app.get('/user', (req, res) => {
         res.header('Access-Control-Allow-Origin', config.DOMAIN_NAME);
         res.header('Access-Control-Allow-Credentials', 'true');
         res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
@@ -154,7 +154,7 @@ function setupAuthRoutes(app) {
 
 
 
-    app.get('/auth/logout', (req, res) => {
+    app.get('/logout', (req, res) => {
         if (!req.session) {
             return res.redirect('/');
         }

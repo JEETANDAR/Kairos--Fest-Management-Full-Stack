@@ -1,3 +1,5 @@
+
+
 const http = require('http');
 const express = require('express');
 const path = require('path');
@@ -27,19 +29,14 @@ async function startServer() {
         await startAllProcesses();  // ✅ Ensure this completes before server starts
         console.log("✅ startAllProcesses completed successfully!");
 
-        // Serve static files from server/public
-        app.use(express.static(path.join(__dirname, 'public')));
-
-        // Catch-all route to serve index.html for unmatched routes (SPA)
-        app.get('*', (req, res) => {
-            res.sendFile(path.join(__dirname, 'public', 'index.html'));
-        });
 
         // Initialize authentication middleware
         initializeAuth(app);
 
-        // Set up authentication routes
-        setupAuthRoutes(app);
+        // Set up authentication routes at /api/auth
+        const authRouter = express.Router();
+        setupAuthRoutes(authRouter);
+        app.use('/api/auth', authRouter);
 
         // CORS
         const corsOptions = {
@@ -78,16 +75,30 @@ async function startServer() {
         app.use(helmet());
         app.use(express.json());
 
-
         // API Routes (original paths)
-        app.use('/', homePageDetails);
-        app.use('/userRout', userDefinedRouts);
-        app.use('/payment', razorpayRouter);
-        app.use('/coordinator', checkIfCoordinator, coordinatorRouter);
+        app.use('/api/', homePageDetails);
+        app.use('/api/userRout', userDefinedRouts);
+        app.use('/api/payment', razorpayRouter);
+        app.use('/api/coordinator', checkIfCoordinator, coordinatorRouter);
 
         // Endpoint to View All Routes
         app.get('/routes', (req, res) => {
             res.json(listEndpoints(app));
+        });
+
+        // Serve static files from server/public
+        app.use(express.static(path.join(__dirname, 'public')));
+
+        // Catch-all route to serve index.html for unmatched routes (SPA)
+        app.get('*', (req, res) => {
+            res.sendFile(path.join(__dirname, 'public', 'index.html'));
+        });
+
+        // Endpoint to log frontend route changes
+        app.post('/route-log', express.json(), (req, res) => {
+            const { path, timestamp } = req.body;
+            console.log(`[ROUTE LOG] ${timestamp}: ${path}`);
+            res.status(204).end();
         });
 
 
