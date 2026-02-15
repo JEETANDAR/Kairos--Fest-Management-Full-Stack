@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: "Kairos-FS",
-      script: "server.js",
+      script: "./server/server.js",
 
       instances: 2,
       exec_mode: "cluster",
