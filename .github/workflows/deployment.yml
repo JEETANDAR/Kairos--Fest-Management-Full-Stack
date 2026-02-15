@@ -23,7 +23,7 @@ jobs:
           node-version: 22
 
       - name: Install dependencies
-        run: npm run perdeploy
+        run: npm run perdeploy:install
 
       - name: Build the project
         run: npm run perdeploy
@@ -48,8 +48,11 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd /home/ubuntu/Kairos--Fest-Management-Full-Stack
-            git pull origin main
-            npm install
-            npm run build # or your build command
-            pm2 restart <your-app-name-or-id> 
-
+                  
+            git fetch origin
+            git reset --hard origin/main
+                  
+            npm install --production
+            npm run build
+                  
+            pm2 reload ecosystem.config.js --update-env || pm2 start ecosystem.config.js
