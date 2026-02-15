@@ -1,0 +1,61 @@
+name: deploy code to server 
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Required to push code
+      pull-requests: write
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install dependencies
+        run: npm perdeploy
+
+      - name: Build the project
+        run: npm run preDeploy
+
+      # Option 1: Restart EC2 instance (uncomment if you want to reboot the whole instance)
+      # - name: Configure AWS credentials
+      #   uses: aws-actions/configure-aws-credentials@v4
+      #   with:
+      #     aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      #     aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      #     aws-region: <your-region>
+
+      # - name: Restart EC2 instance
+      #   run: aws ec2 reboot-instances --instance-ids <your-instance-id>
+
+      # Option 2: Restart backend service via SSH (recommended)
+      - name: Restart backend service via SSH
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+        - name: Deploy and restart backend via SSH
+          uses: appleboy/ssh-action@v0.1.10
+          with:
+            host: ${{ secrets.EC2_HOST }}
+            username: ${{ secrets.EC2_USER }}
+            key: ${{ secrets.EC2_SSH_KEY }}
+            script: |
+              cd ~/
+              git pull origin main
+              npm install
+              npm run build # or your build command
+              pm2 restart <your-app-name-or-id> 
+
