@@ -72,8 +72,9 @@ async function startServer() {
         }));
 
         // Middleware
-        app.use(helmet());
-        app.use(express.json());
+        app.use(helmet({ contentSecurityPolicy: false }));
+	    
+	 app.use(express.json());
 
         // API Routes (original paths)
         app.use('/api/', homePageDetails);
