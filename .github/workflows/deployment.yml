@@ -48,11 +48,11 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
             cd /home/ubuntu/Kairos--Fest-Management-Full-Stack
-                  
+
             git fetch origin
             git reset --hard origin/main
-                  
-            npm install --production
-            npm run build
-                  
+
+            npm install perdeploy:install
+            npm run perdeploy
+
             pm2 reload ecosystem.config.js --update-env || pm2 start ecosystem.config.js
