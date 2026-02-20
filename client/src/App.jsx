@@ -5,6 +5,7 @@ import Loading from './pages/Loading/Loading';
 import Scoreboard from './pages/Scoreboard';
 import Success from './pages/Success';
 import PrivateAccount from './pages/PrivacyPolicy/PrivateAccount';
+import myUrl from './server/serverURL_link';
 
 const HomePage = lazy(() => import('./pages/HomePage/HomePage'));
 const FailurePage = lazy(() => import('./pages/FailurePage'));
@@ -17,7 +18,7 @@ const App = () => {
 
   useEffect(() => {
     // Send route change to backend
-    fetch('http://localhost:9000/route-log', {
+    fetch(`${myUrl}route-log`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ path: location.pathname, timestamp: new Date().toISOString() })
