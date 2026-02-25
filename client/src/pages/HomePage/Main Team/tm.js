@@ -16,6 +16,11 @@ import Saniya from "./team photo/saniya.jpg"
 import Spoorti from "./team photo/spoorti.jpg"
 import Tarun from "./team photo/tarun.jpg"
 import Ajin from "./team photo/ajin.jpg"
+import Sud from "./team photo/sud.jpg"
+import Riz from "./team photo/riz.jpg"
+import Priyanka from "./team photo/pri.jpg"
+import Oli from "./team photo/oli.jpg"
+import Dar from "./team photo/darshn.jpg"
 
 // Team members data
 const teamData = [
@@ -88,10 +93,10 @@ const teamData = [
     id: "6",
     name: "Ms. Priyanka",
     title: "Assistant Professor",
-    image: lincy,
+    image: Priyanka,
     social: {
       twitter: "#",
-      linkedin: "https://www.linkedin.com/in/lincy-joseph-a81134174",
+      linkedin: "#",
       instagram: "#",
       website: "#",
     },
@@ -114,7 +119,7 @@ const teamData = [
     id: "8",
     name: "Olivia Shibu",
     title: "Vice President",
-    image: Arden,
+    image: Oli,
     social: {
       twitter: "https://x.com/ArdenDiago",
       linkedin: "https://www.linkedin.com/in/arden-diago/",
@@ -127,7 +132,7 @@ const teamData = [
     id: "9",
     name: "Madiha Tasleem",
     title: "Vice President",
-    image: Nikita,
+    image: Madiha,
     social: {
       twitter: "#",
       linkedin: "#",
@@ -140,7 +145,7 @@ const teamData = [
     id: "10",
     name: "Saniya Stafford",
     title: "Secretary",
-    image: Dyju,
+    image: Saniya,
     social: {
       twitter: "#",
       linkedin: "#",
@@ -166,7 +171,7 @@ const teamData = [
     id: "12",
     name: "Dyju S",
     title: "Technical Head",
-    image: Jeetandar,
+    image: Dyju,
     social: {
       twitter: "https://twitter.com/n_silwani",
       linkedin: "https://www.linkedin.com/in/jeetandar-n-silwani-6b6863213/",
@@ -179,7 +184,7 @@ const teamData = [
     id: "13",
     name: "Rizwana Parveen K",
     title: "Coding Head",
-    image: Saniya,
+    image: Riz,
     social: {
       twitter: "#",
       linkedin: "#",
@@ -205,7 +210,7 @@ const teamData = [
     id: "15",
     name: "Sudeesh S",
     title: "Gaming Head",
-    image: Spoorti,
+    image: Sud,
     social: {
       twitter: "https://x.com/spoorthikc174?t=EnCJWkse38anHlAJ_tu3sw&s=08",
       linkedin: "https://www.linkedin.com/in/spoorthi-k-c-6a4aa9338?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app",
@@ -230,7 +235,7 @@ const teamData = [
     id: "17",
     name: "Darshn S",
     title: "Design Head",
-    image: Abi,
+    image: Dar,
     social: {
       twitter: "#",
       linkedin: "#",
@@ -269,7 +274,7 @@ const teamData = [
     id: "20",
     name: "Spoorthi KC",
     title: "Documentation Head",
-    image: Ajay,
+    image: Spoorti,
     social: {
       twitter: "https://x.com/ajaykumarbv193",
       linkedin: " https://www.linkedin.com/in/ajay-b-v-805922334",

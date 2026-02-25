@@ -93,9 +93,9 @@ const LocationCard = () => {
         <p className="font-semibold mb-2">Visit Us:</p>
         <p>St Pauls Campus, E-1, opposite HMT layout, Nalagadderanahalli, Peenya, Bengaluru, Karnataka 560073</p>
         <p className="mt-2 font-semibold">Contact Co-Ordinator:</p>
-        <p><span className="font-semibold">Ajin:</span> 6363356169</p>
-        <p><span className="font-semibold">Arden:</span> 7208715575</p>
-        <p><span className="font-semibold">Nikita:</span> 9004702200</p>
+        <p><span className="font-semibold">Jeetandar:</span> 9663926665</p>
+        <p><span className="font-semibold">Saniya:</span> 9110295521</p>
+        {/* <p><span className="font-semibold">Nikita:</span> 9004702200</p> */}
       </div>
     </div>
   );
