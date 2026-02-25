@@ -19,21 +19,19 @@ import Ajin from "./team photo/ajin.jpg"
 
 // Team members data
 const teamData = [
-  
   {
-  "id": "1",
-  "name": "Mr. Prakash V",
-  "title": "HOD, Department of Computer Science",
-  "image": Prakash,
-  "social": {
-    "instagram": "https://www.linkedin.com/in/prakash88",
-    "twitter": "#",
-    "linkedin": "#",
-    "website": "#"
+    id: "1",
+    name: "Mr. Prakash V",
+    title: "HOD, Department of Computer Science",
+    image: Prakash,
+    social: {
+      instagram: "https://www.linkedin.com/in/prakash88",
+      twitter: "#",
+      linkedin: "#",
+      website: "#"
+    },
+    categories: ["Board Members", "Faculty"]
   },
-  "categories": ["Board Members", "Faculty"]
-},
-  
   {
     id: "2",
     name: "Ms. Greeshma V.S",
@@ -45,8 +43,7 @@ const teamData = [
       linkedin: "https://www.linkedin.com/in/greeshma-vs-7b074bba/",
       website: "#",
     },
-    categories: ["Board Members","Faculty"], // Member in multiple categories
-    
+    categories: ["Board Members","Faculty"],
   },
   {
     id: "3",
@@ -62,7 +59,7 @@ const teamData = [
     categories: ["Board Members","Faculty"],
   },
   {
-    id: "4",      
+    id: "4",
     name: "Mr. Suhas Aithal V",
     title: "Assistant Professor",
     image: Suhas,
@@ -89,21 +86,34 @@ const teamData = [
   },
   {
     id: "6",
+    name: "Ms. Priyanka",
+    title: "Assistant Professor",
+    image: lincy,
+    social: {
+      twitter: "#",
+      linkedin: "https://www.linkedin.com/in/lincy-joseph-a81134174",
+      instagram: "#",
+      website: "#",
+    },
+    categories: ["Board Members","Faculty"],
+  },
+  {
+    id: "7",
     name: "Jeetandar N Silwani",
     title: "President",
     image: Jeetandar,
     social: {
-      twitter: " https://x.com/AjinK08",
-      linkedin: "https://www.linkedin.com/in/ajin-k-815102259/",
-      instagram: "https://www.instagram.com/_.a._.j._.i._.n._/",
-      website: "https://ajin-2004.github.io/Portfolio-Website/ ",
+      twitter: "https://twitter.com/n_silwani",
+      linkedin: "https://www.linkedin.com/in/jeetandar-n-silwani-6b6863213/",
+      instagram: "https://www.instagram.com/_heisahotmess_01/",
+      website: "https://jeetandar-portfolio01.netlify.app/",
     },
     categories: ["Board Members","Students"],
   },
   {
-    id: "7",
-    name: "Arden Diago",
-    title: "Secretary",
+    id: "8",
+    name: "Olivia Shibu",
+    title: "Vice President",
     image: Arden,
     social: {
       twitter: "https://x.com/ArdenDiago",
@@ -114,33 +124,33 @@ const teamData = [
     categories: ["Board Members","Students"],
   },
   {
-    id: "8",
-    name: "Nikita Sachin Deshpande",
-    title: "President",
+    id: "9",
+    name: "Madiha Tasleem",
+    title: "Vice President",
     image: Nikita,
     social: {
       twitter: "#",
-      linkedin: "https://www.linkedin.com/in/nikita-sachin-deshpande-8320ab354?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app ",
-      instagram: "https://www.instagram.com/nikitasd12/",
+      linkedin: "#",
+      instagram: "https://www.instagram.com/_.iam._.madiha._/",
       website: "#",
     },
     categories: ["Board Members","Students"],
   },
   {
-    id: "9",
-    name: "Dyju S",
-    title: "Vice President",
+    id: "10",
+    name: "Saniya Stafford",
+    title: "Secretary",
     image: Dyju,
     social: {
-      twitter: "https://www.threads.net/@connor_05_22",
+      twitter: "#",
       linkedin: "#",
-      instagram: "https://www.instagram.com/connor_05_22/",
-      website: "#https://steamcommunity.com/id/connor-2545/ ",
+      instagram: "https://www.instagram.com/yup_saniya/",
+      website: "#",
     },
     categories: ["Board Members","Students"],
   },
   {
-    id: "10",
+    id: "11",
     name: "Ebin R",
     title: "Technical Head",
     image: ebin,
@@ -153,8 +163,8 @@ const teamData = [
     categories: ["Board Members","Students"],
   },
   {
-    id: "11",
-    name: "Jeetandar N Silwani",
+    id: "12",
+    name: "Dyju S",
     title: "Technical Head",
     image: Jeetandar,
     social: {
@@ -166,9 +176,9 @@ const teamData = [
     categories: ["Board Members","Students"],
   },
   {
-    id: "12",
-    name: "Saniya Stafford",
-    title: "Joint Secretary",
+    id: "13",
+    name: "Rizwana Parveen K",
+    title: "Coding Head",
     image: Saniya,
     social: {
       twitter: "#",
@@ -179,9 +189,9 @@ const teamData = [
     categories: ["Board Members","Students"],
   },
   {
-    id: "13",
-    name: "Madiha Tasleem",
-    title: "Joint Secretary",
+    id: "14",
+    name: "Ankitha A Kumar",
+    title: "Coding Head",
     image: Madiha,
     social: {
       twitter: "#",
@@ -192,22 +202,21 @@ const teamData = [
     categories: ["Board Members","Students"],
   },
   {
-    id: "14",
-    name: "Spoorthi K.C",
-    title: "Treasurer",
+    id: "15",
+    name: "Sudeesh S",
+    title: "Gaming Head",
     image: Spoorti,
     social: {
-      twitter: "https://x.com/spoorthikc174?t=EnCJWkse38anHlAJ_tu3sw&s=08 ",
-      linkedin: "https://www.linkedin.com/in/spoorthi-k-c-6a4aa9338?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app ",
+      twitter: "https://x.com/spoorthikc174?t=EnCJWkse38anHlAJ_tu3sw&s=08",
+      linkedin: "https://www.linkedin.com/in/spoorthi-k-c-6a4aa9338?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app",
       instagram: "https://www.instagram.com/spoorthi.alora?utm_source=qr&igsh=MXN1cmVhdHhjb2o0ZQ%3D%3D",
-      
     },
     categories: ["Board Members","Students"],
   },
   {
-    id: "15",
-    name: "Tarun Kumar",
-    title: "Coding Club Head",
+    id: "16",
+    name: "Suman B",
+    title: "Gaming Head",
     image: Tarun,
     social: {
       twitter: "#",
@@ -218,9 +227,9 @@ const teamData = [
     categories: ["Board Members","Students"],
   },
   {
-    id: "16",
-    name: "Abishin Marshall",
-    title: "Gaming Club Head",
+    id: "17",
+    name: "Darshn S",
+    title: "Design Head",
     image: Abi,
     social: {
       twitter: "#",
@@ -231,8 +240,8 @@ const teamData = [
     categories: ["Board Members","Students"],
   },
   {
-    id: "17",
-    name: "Ajay B V",
+    id: "18",
+    name: "Sanjay S",
     title: "Design Lead",
     image: Ajay,
     social: {
@@ -243,10 +252,84 @@ const teamData = [
     },
     categories: ["Board Members","Students"],
   },
-  
-  
- 
- 
+  {
+    id: "19",
+    name: "Ruqaiya Ayman",
+    title: "Documentation Head",
+    image: Ajay,
+    social: {
+      twitter: "https://x.com/ajaykumarbv193",
+      linkedin: " https://www.linkedin.com/in/ajay-b-v-805922334",
+      instagram: "https://www.instagram.com/aj_devil__ ",
+      website: "#",
+    },
+    categories: ["Board Members","Students"],
+  },
+  {
+    id: "20",
+    name: "Spoorthi KC",
+    title: "Documentation Head",
+    image: Ajay,
+    social: {
+      twitter: "https://x.com/ajaykumarbv193",
+      linkedin: " https://www.linkedin.com/in/ajay-b-v-805922334",
+      instagram: "https://www.instagram.com/aj_devil__ ",
+      website: "#",
+    },
+    categories: ["Board Members","Students"],
+  },
+  {
+    id: "21",
+    name: "Kavya S",
+    title: "Documentation Head",
+    image: Ajay,
+    social: {
+      twitter: "https://x.com/ajaykumarbv193",
+      linkedin: " https://www.linkedin.com/in/ajay-b-v-805922334",
+      instagram: "https://www.instagram.com/aj_devil__ ",
+      website: "#",
+    },
+    categories: ["Board Members","Students"],
+  },
+  {
+    id: "22",
+    name: "Charles Branson",
+    title: "Treasurer",
+    image: Ajay,
+    social: {
+      twitter: "https://x.com/ajaykumarbv193",
+      linkedin: " https://www.linkedin.com/in/ajay-b-v-805922334",
+      instagram: "https://www.instagram.com/aj_devil__ ",
+      website: "#",
+    },
+    categories: ["Board Members","Students"],
+  },
+  {
+    id: "23",
+    name: "Deekshitha R",
+    title: "Joint Secretary",
+    image: Ajay,
+    social: {
+      twitter: "https://x.com/ajaykumarbv193",
+      linkedin: " https://www.linkedin.com/in/ajay-b-v-805922334",
+      instagram: "https://www.instagram.com/aj_devil__ ",
+      website: "#",
+    },
+    categories: ["Board Members","Students"],
+  },
+  {
+    id: "24",
+    name: "Sahana S",
+    title: "Joint Secretary",
+    image: Ajay,
+    social: {
+      twitter: "https://x.com/ajaykumarbv193",
+      linkedin: " https://www.linkedin.com/in/ajay-b-v-805922334",
+      instagram: "https://www.instagram.com/aj_devil__ ",
+      website: "#",
+    },
+    categories: ["Board Members","Students"],
+  },
 ];
 
 // Create a dictionary grouped by category (supporting multiple categories per member)

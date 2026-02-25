@@ -54,7 +54,7 @@ export const navigation = [
   {
     id: "1",
     title: "Event Details",
-    url: "#roadmap",
+    url: "#tec",
   },
   {
     id: "2",
