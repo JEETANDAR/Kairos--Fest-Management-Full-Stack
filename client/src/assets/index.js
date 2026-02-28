@@ -25,6 +25,7 @@ import curve from "./hero/curve.png";
 import robot from "./hero/robot.jpg";
 import heroBackground from "./hero/hero-background.jpg";
 import pa from "./hero/pa.jpg"; // Import for pa.jpg
+import f1 from "./hero/f1.jpg";
 import curve1 from "./collaboration/curve-1.svg";
 import curve2 from "./collaboration/curve-2.svg";
 import discord from "./collaboration/discord.png";
@@ -96,6 +97,7 @@ export {
   zecur,
   kill,
   charle,
+  f1,
   play,
   gradient,
   smallSphere,

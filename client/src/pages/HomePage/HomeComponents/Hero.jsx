@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { curve, heroBackground, pa } from "../../../assets";
+import { curve, f1, heroBackground, pa } from "../../../assets";
 import LazyImage from "./LazyImage";
 import Button from "../../../components/Button";
 import Section from "./Section";
@@ -78,7 +78,7 @@ const Hero = () => {
               {/* PA Image for Mobile - Full Coverage */}
               <div className="md:hidden w-full h-full">
                 <LazyImage
-                  src={pa}
+                  src={f1}
                   className="w-full h-full object-cover rounded-b-[1rem]"
                   width={500}
                   height={500}
@@ -86,16 +86,13 @@ const Hero = () => {
                 />
               </div>
 
-              {/* Main Image for Tablet & Desktop - Full Coverage */}
-              <div className="hidden md:block w-full rounded-b-[1rem] overflow-hidden md:aspect-[1300/490] lg:aspect-[1216/490]">
-                <LazyImage
-                  src={pa}
-                  className="w-full h-full object-cover"
-                  width={1216}
-                  height={490}
-                  alt="PA Image"
-                />
-              </div>
+         <div className="hidden md:block relative w-full h-[420px] rounded-b-[1rem] overflow-hidden">
+  <img
+    src={f1}
+    alt="PA Image"
+    className="absolute inset-0 w-full h-full object-cover object-[center_50%]"
+  />
+</div>
             </div>
             <Gradient />
           </div>
