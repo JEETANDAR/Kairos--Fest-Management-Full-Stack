@@ -1,16 +1,16 @@
 import { Divide } from "lucide-react";
-import ebin from "./team photo/ebii.jpg"
-import lincy from "./team photo/LINCY-1.jpg"
-import Prakash from "./team photo/mrPrakashV.jpeg"
+import ebin from "./team photo/ebi1.jpg"
+import lincy from "./team photo/lincy.jpg"
+import Prakash from "./team photo/prakash.jpg"
 import Greeshma from "./team photo/missGreeshma.jpg"
 import Manjula from "./team photo/missManjula.jpg"
 import Suhas from "./team photo/mrSuhas.jpg"
 import Abi from "./team photo/abi.jpg"
 import Ajay from "./team photo/ajay.jpg"
 import Arden from "./team photo/arden.jpg"
-import Dyju from "./team photo/dyju.jpg"
+import Dyju from "./team photo/dd.jpg"
 import Jeetandar from "./team photo/jeetandar.jpg"
-import Madiha from "./team photo/madiha.jpg"
+import Madiha from "./team photo/mad.jpg"
 import Nikita from "./team photo/nikita.jpg"
 import Saniya from "./team photo/saniya.jpg"
 import Spoorti from "./team photo/spoorti.jpg"
@@ -21,6 +21,11 @@ import Riz from "./team photo/riz.jpg"
 import Priyanka from "./team photo/pri.jpg"
 import Oli from "./team photo/oli.jpg"
 import Dar from "./team photo/darshn.jpg"
+import ank from "./team photo/anki.jpg"
+import aym from "./team photo/ayma.jpg"
+import charle from "./team photo/cc.jpg"
+
+
 
 // Team members data
 const teamData = [
@@ -197,7 +202,7 @@ const teamData = [
     id: "14",
     name: "Ankitha A Kumar",
     title: "Coding Head",
-    image: Madiha,
+    image: ank,
     social: {
       twitter: "#",
       linkedin: "#",
@@ -261,7 +266,7 @@ const teamData = [
     id: "19",
     name: "Ruqaiya Ayman",
     title: "Documentation Head",
-    image: Ajay,
+    image: aym,
     social: {
       twitter: "#",
       linkedin: "#",
@@ -300,7 +305,7 @@ const teamData = [
     id: "22",
     name: "Charles Branson",
     title: "Treasurer",
-    image: Ajay,
+    image: charle,
     social: {
       twitter: "#",
       linkedin: "#",

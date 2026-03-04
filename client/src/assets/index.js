@@ -37,6 +37,7 @@ import protopie from "./collaboration/protopie.png";
 import raindrop from "./collaboration/raindrop.png";
 import slack from "./collaboration/slack.png";
 
+
 import service1 from "./services/service-1.png";
 import service2 from "./services/service-2.png";
 import service3 from "./services/service-3.png";
@@ -80,13 +81,16 @@ import twitter from "./socials/twitter.svg";
 import card1 from "./benefits/card-1.svg";
 import card2 from "./benefits/card-2.svg";
 import card3 from "./benefits/card-2.svg";
+// import ias from "../assets/insightsias.png"
 
 import zecur from "./zecurx.png";
 import kill from "./Skyll-logo11.png";
 import charle from "./charle.png";
-import gined from "./gined.png" 
+import gined from "./gined.png";
+import ias from "./insightslogo.png";
 
 export {
+  ias,
   dept,
   check,
   check2,

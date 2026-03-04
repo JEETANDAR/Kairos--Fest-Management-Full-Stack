@@ -43,6 +43,7 @@ import {
   card2,
   card3,
   zecur,
+  ias,
 } from "../assets";
 
 export const navigation = [
@@ -89,7 +90,7 @@ export const heroIcons = [homeSmile, file02, searchMd, plusSquare];
 
 export const notificationImages = [notification4, notification3, notification2];
 
-export const companyLogos = [ charle ];
+export const companyLogos = [ ias, charle ];
 
 export const brainwaveServices = [
   "Photo generating",
