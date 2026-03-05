@@ -22,8 +22,11 @@ import Priyanka from "./team photo/pri.jpg"
 import Oli from "./team photo/oli.jpg"
 import Dar from "./team photo/darshn.jpg"
 import ank from "./team photo/anki.jpg"
-import aym from "./team photo/ayma.jpg"
+import aym from "./team photo/ayman.jpg"
 import charle from "./team photo/cc.jpg"
+import sah from "./team photo/sahana.jpg"
+import deek from "./team photo/deek.jpg"
+
 
 
 
@@ -318,7 +321,7 @@ const teamData = [
     id: "23",
     name: "Deekshitha R",
     title: "Joint Secretary",
-    image: Ajay,
+    image: deek,
     social: {
       twitter: "#",
       linkedin: "#",
@@ -331,7 +334,7 @@ const teamData = [
     id: "24",
     name: "Sahana S",
     title: "Joint Secretary",
-    image: Ajay,
+    image: sah,
     social: {
       twitter: "#",
       linkedin: "#",
