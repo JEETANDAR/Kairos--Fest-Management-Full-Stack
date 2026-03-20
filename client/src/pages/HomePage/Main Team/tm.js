@@ -7,6 +7,7 @@ import Manjula from "./team photo/missManjula.jpg"
 import Suhas from "./team photo/mrSuhas.jpg"
 import Abi from "./team photo/abi.jpg"
 import Ajay from "./team photo/ajay.jpg"
+import Thomas from "./team photo/thomas.webp"
 import Arden from "./team photo/arden.jpg"
 import Dyju from "./team photo/dd.jpg"
 import Jeetandar from "./team photo/jeeta.jpg"
@@ -340,6 +341,17 @@ const teamData = [
       linkedin: "#",
       instagram: "https://www.instagram.com/sa_ha_na_s_",
       website: "#",
+    },
+    categories: ["Board Members","Students"],
+  },
+  {
+    id: "25",
+    name: "Dr. Fr. Thomas M.J",
+    title: "Principal",
+    image: Thomas,
+    social: {
+     
+      website: "https://blr.stpaulscollege.edu.in/",
     },
     categories: ["Board Members","Students"],
   },

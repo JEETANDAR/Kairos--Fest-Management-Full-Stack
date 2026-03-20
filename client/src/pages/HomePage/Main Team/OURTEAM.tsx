@@ -109,6 +109,46 @@ const OURTEAM: React.FC = () => {
           <p className="text-gray-300 text-lg max-w-3xl mx-auto">The faces behind KAIROS 2026</p>
         </div>
 
+        <div className="text-center mb-16">
+  <h2 className="text-3xl font-bold text-white mb-3">Management</h2>
+
+  {/* Decorative SVG divider */}
+  <div className="flex justify-center mb-8 ">
+    <svg width="220" height="18" viewBox="0 0 220 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <line x1="0" y1="9" x2="80" y2="9" stroke="url(#fadeLeft)" strokeWidth="1.5"/>
+      <circle cx="92" cy="9" r="2" fill="#6b7280"/>
+      <circle cx="110" cy="9" r="4" fill="none" stroke="#9ca3af" strokeWidth="1.5"/>
+      <circle cx="110" cy="9" r="1.5" fill="#9ca3af"/>
+      <circle cx="128" cy="9" r="2" fill="#6b7280"/>
+      <line x1="140" y1="9" x2="220" y2="9" stroke="url(#fadeRight)" strokeWidth="1.5"/>
+      <defs>
+        <linearGradient id="fadeLeft" x1="0" y1="0" x2="80" y2="0" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#6b7280" stopOpacity="0"/>
+          <stop offset="100%" stopColor="#6b7280" stopOpacity="1"/>
+        </linearGradient>
+        <linearGradient id="fadeRight" x1="140" y1="0" x2="220" y2="0" gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor="#6b7280" stopOpacity="1"/>
+          <stop offset="100%" stopColor="#6b7280" stopOpacity="0"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  </div>
+
+  <div className="flex justify-center">
+  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    
+    {(teamDictionary["Students"] || [])
+      .filter((item: TeamMember) => item.name === "Dr. Fr. Thomas M.J")
+      .map((item: TeamMember) => (
+        <div className="col-span-1 md:col-span-2 lg:col-span-3 flex justify-center">
+          <TeamMemberCard key={item.id} {...item} />
+        </div>
+      ))}
+
+  </div>
+</div>
+</div>
+
         {/* Faculty Section */}
         <div className="text-center mb-16">
           <h2 className="text-3xl font-bold text-white mb-3">Faculty</h2>
