@@ -15,7 +15,7 @@ import Madiha from "./team photo/mad.jpg"
 import Nikita from "./team photo/nikita.jpg"
 import Saniya from "./team photo/saniya.jpg"
 import Spoorti from "./team photo/spoorti.jpg"
-import Tarun from "./team photo/tarun.jpg"
+import Tarun from "./team photo/sum.jpg"
 import Ajin from "./team photo/ajin.jpg"
 import Sud from "./team photo/sud.jpg"
 import Riz from "./team photo/riz.jpg"
@@ -27,6 +27,8 @@ import aym from "./team photo/ayman.jpg"
 import charle from "./team photo/cc.jpg"
 import sah from "./team photo/sahana.jpg"
 import deek from "./team photo/deek.jpg"
+import san from "./team photo/sanj.jpg"
+import kav from "./team photo/kav.jpg"
 
 
 
@@ -257,7 +259,7 @@ const teamData = [
     id: "18",
     name: "Sanjay S",
     title: "Design Lead",
-    image: Ajay,
+    image: san,
     social: {
       twitter: "#",
       linkedin: "#",
@@ -296,7 +298,7 @@ const teamData = [
     id: "21",
     name: "Kavya S",
     title: "Documentation Head",
-    image: Ajay,
+    image: kav,
     social: {
       twitter: "#",
       linkedin: "#",

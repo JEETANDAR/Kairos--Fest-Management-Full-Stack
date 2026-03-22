@@ -248,14 +248,16 @@ const OURTEAM: React.FC = () => {
 
           {/* Team Tab — ALL students */}
           {activeTab === "team" && (
-            <div className="flex justify-center">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {teamMembers.map((item) => (
-                  <TeamMemberCard key={item.id} {...item} />
-                ))}
-              </div>
-            </div>
-          )}
+  <div className="flex justify-center">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {teamMembers
+        .filter((item) => item.name !== "Dr. Fr. Thomas M.J")
+        .map((item) => (
+          <TeamMemberCard key={item.id} {...item} />
+        ))}
+    </div>
+  </div>
+)}
         </div>
 
       </div>
