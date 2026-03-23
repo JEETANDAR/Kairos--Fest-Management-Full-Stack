@@ -133,7 +133,7 @@ const [orderData, setOrderData] = useState<{
 
   const calculateTotalAmount = () => {
     if (isContingent) {
-      return 3000;
+      return 2600;
     }
     return selectedEvents.reduce(
       (total, eventId) => total + calculateEventTotal(eventId),

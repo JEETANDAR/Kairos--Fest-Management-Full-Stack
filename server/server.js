@@ -22,6 +22,7 @@ const { startAllProcesses } = require('./utils/startUpPrograms');
 const app = express();
 const PORT_NO = 9000;
 
+
 // ✅ Function to Start the Server AFTER startAllProcesses()
 async function startServer() {
     try {
@@ -115,6 +116,7 @@ async function startServer() {
         process.exit(1);  // Stop execution if `startAllProcesses()` fails
     }
 }
+
 
 // Start the Server
 startServer();

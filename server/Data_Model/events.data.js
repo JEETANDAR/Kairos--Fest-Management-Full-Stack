@@ -1,86 +1,114 @@
-const Event = require('../schema/Event.schema'); // Ensure your Event schema is correctly set up
+const Event = require('../schema/Event.schema');
 const Score = require('../schema/Scores.schema');
 
+/**
+ * GET ALL EVENTS
+ */
 async function getEventsData() {
     try {
-        const allEvents = await Event.find({}) // Get all documents from the 'Event' collection
+        const allEvents = await Event.find({})
             .lean()
             .select('-_id -__v');
 
         return allEvents;
     } catch (error) {
         console.error("Error fetching events:", error);
-        return []; // Return an empty array if there's an error
+        return [];
     }
 }
 
+/**
+ * ADD EVENTS (SAFE VERSION 🚀)
+ * 👉 WILL INSERT ONLY IF DATABASE IS EMPTY
+ * 👉 WILL NOT OVERRIDE OR RE-INSERT DELETED DATA
+ */
 async function addAllEvents(events, IDs) {
     try {
-        // Check if any event with eventID in IDs exists
-        const findEventData = await Event.find({ eventID: { $in: IDs } });
-        const findScoreData = await Score.find({ eventID: { $in: IDs } });
+        const eventCount = await Event.countDocuments();
+        const scoreCount = await Score.countDocuments();
 
-        console.log("Found event data: ", findEventData, IDs);
-        console.log("Found score data: ", findScoreData);
+        console.log("Event count:", eventCount);
+        console.log("Score count:", scoreCount);
 
-        // If not all events exist, delete and insert them
-        if (findEventData.length !== IDs.length) {
-            if (findEventData.length > 0) {
-                await Event.deleteMany({ eventID: { $in: IDs } });
-            }
-
-            console.log("Saving the Event to DB");
+        // ✅ ONLY INSERT EVENTS IF DB IS EMPTY
+        if (eventCount === 0) {
+            console.log("🚀 Inserting initial events...");
             await Event.insertMany(events, { timeout: 20000 });
         } else {
-            console.log("Event Data already exists.");
+            console.log("✅ Events already exist. No re-insert.");
         }
 
-        // If not all scores exist, delete and insert them
-        if (findScoreData.length !== IDs.length) {
-            if (findScoreData.length > 0) {
-                await Score.deleteMany({ eventID: { $in: IDs } });
-            }
+        // ✅ ONLY INSERT SCORES IF EMPTY
+        if (scoreCount === 0) {
+            console.log("🚀 Inserting initial scores...");
 
-            console.log("Saving the Score Data to DB");
-
-            // Create score objects based on your schema structure
             const scores = events.map((event) => ({
                 eventID: event.eventID.toUpperCase(),
                 eventName: event.eventName,
-                scores: [] // Ensure this structure matches your schema
+                scores: []
             }));
 
             await Score.insertMany(scores, { timeout: 10000 });
         } else {
-            console.log("Score Data already exists.");
+            console.log("✅ Scores already exist. No re-insert.");
         }
 
     } catch (error) {
-        console.error("Error fetching or saving events or score data:", error);
+        console.error("Error saving events or score data:", error);
     }
 }
 
+/**
+ * GET EVENTS BY TYPE
+ */
 async function getEventsDataByID(eventType) {
-    const event = await Event.find({ eventType: eventType.toUpperCase() })
-        .lean()
-        .select({ _id: 0, __v: 0 });
+    try {
+        const event = await Event.find({
+            eventType: eventType.toUpperCase()
+        })
+            .lean()
+            .select({ _id: 0, __v: 0 });
 
-    return event;
+        return event;
+    } catch (error) {
+        console.error("Error fetching event by type:", error);
+        return [];
+    }
 }
 
+/**
+ * GET AMOUNT + MAX PARTICIPANTS
+ */
 async function getAmountAndMinimumNoOfParticipants(eventID) {
-    const eventAMT = await Event.find({ eventID: eventID.toUpperCase() })
-        .lean()
-        .select({ registrationFee: 1, maximumNoOfParticipants: 1 });
+    try {
+        const eventAMT = await Event.find({
+            eventID: eventID.toUpperCase()
+        })
+            .lean()
+            .select({
+                registrationFee: 1,
+                maximumNoOfParticipants: 1
+            });
 
-    if (!eventAMT.length) {
-        return { amt: 0, maximumNoOfParticipants: 0 }; // Handle case where no data is found
+        if (!eventAMT.length) {
+            return {
+                amt: 0,
+                maximumNoOfParticipants: 0
+            };
+        }
+
+        return {
+            amt: eventAMT[0].registrationFee,
+            maximumNoOfParticipants: eventAMT[0].maximumNoOfParticipants
+        };
+
+    } catch (error) {
+        console.error("Error fetching amount:", error);
+        return {
+            amt: 0,
+            maximumNoOfParticipants: 0
+        };
     }
-
-    return {
-        amt: eventAMT[0].registrationFee,
-        maximumNoOfParticipants: eventAMT[0].maximumNoOfParticipants
-    };
 }
 
 module.exports = {

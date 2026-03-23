@@ -11,7 +11,7 @@ const proceedToPay = async (
 ) => {
   try {
     const paymentMethod = isCashPayment ? "cash" : "online";
-
+    
     const payload = {
       paymentMethod,
       eventsValues: participants,
