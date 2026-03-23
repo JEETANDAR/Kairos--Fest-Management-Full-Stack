@@ -1035,6 +1035,7 @@ handler: async (response: any) => {
             </div>
             {!isAllSaved() && (
               <div className="mt-4 p-3 bg-yellow-900 text-yellow-200 rounded text-center">
+                <p>Note- The Contigent Early Bird Offer will only remain till 24th April 2026</p>
                 <p>Please save all teams before submitting.</p>
                 <p className="font-semibold mt-1">Unsaved events: {getUnsavedEvents().join(", ")}</p>
               </div>
