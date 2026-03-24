@@ -233,7 +233,7 @@ const teamData = [
     id: "16",
     name: "Suman B",
     title: "Gaming Head",
-    image: Tarun,
+    image: san,
     social: {
       twitter: "#",
       linkedin: "#",
@@ -259,7 +259,7 @@ const teamData = [
     id: "18",
     name: "Sanjay S",
     title: "Design Lead",
-    image: san,
+    image: Tarun,
     social: {
       twitter: "#",
       linkedin: "#",
