@@ -76,27 +76,38 @@ if (!eventsValues || typeof eventsValues !== "object") {
     let flattenEmails = {};
     let allEmails = [];
 
-    for (const event of Object.keys(eventsValues)) {
-      const { amt, maximumNoOfParticipants } =
-        await getAmountAndMinimumNoOfParticipants(event);
+   for (const event of Object.keys(eventsValues)) {
+      const { amt, maximumNoOfParticipants } = await getAmountAndMinimumNoOfParticipants(event);
+      const teamsForEvent = Object.values(eventsValues[event]);
 
- const participants = Object.values(eventsValues[event])
-  .flat()
-  .map(p => p.email.toLowerCase());
-
-
-      if (participants.length > maximumNoOfParticipants) {
-        return res.status(400).json({ message: "Max participants exceeded" });
+      // --- DEBUGGING LOGS ---
+      console.log(`\n=== CHECKING EVENT: ${event} ===`);
+      console.log(`Max allowed from DB:`, maximumNoOfParticipants);
+      
+      for (let i = 0; i < teamsForEvent.length; i++) {
+        const team = teamsForEvent[i];
+        console.log(`Team ${i + 1} size:`, team.length);
+        
+        if (team.length > maximumNoOfParticipants) {
+          console.log(`❌ CRASHING HERE: Team size (${team.length}) is greater than DB max (${maximumNoOfParticipants})`);
+          return res.status(400).json({ message: "Max participants exceeded" });
+        }
       }
+      // ----------------------
 
-      totalAmount += amt;
+      const participants = teamsForEvent
+        .flat()
+        .map(p => p.email.toLowerCase());
+
+      totalAmount += (amt * teamsForEvent.length);
+      
       flattenEmails[event] = participants;
       allEmails.push(...participants);
 
       await bulkUserCheckIn(participants);
     }
 
-    if (isContingentSelection) totalAmount = 3000;
+    if (isContingentSelection) totalAmount = 2600;
 
     const order = await generateOrder(
       paymentMethod,

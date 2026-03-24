@@ -51,6 +51,9 @@ const Hero = () => {
   <p className="body-1 max-w-3xl mx-auto mb-1 text-n-2 lg:mb-3">
     Inter-Collegiate Techno-Cultural-Gaming Fest
   </p>
+  <p className="body-1 max-w-3xl mx-auto mb-1 text-n-2 lg:mb-3">
+    28th April 2026
+  </p>
   <p className="body-3 max-w-3xl mx-auto mb-1 text-n-2 lg:mb-3 text-[10px] sm:text-xs md:text-sm">
     Organized by Department of Computer Science
   </p>

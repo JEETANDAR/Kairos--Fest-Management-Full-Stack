@@ -79,10 +79,14 @@ async function getEventsDataByID(eventType) {
 /**
  * GET AMOUNT + MAX PARTICIPANTS
  */
+/**
+ * GET AMOUNT + MAX PARTICIPANTS
+ */
 async function getAmountAndMinimumNoOfParticipants(eventID) {
     try {
         const eventAMT = await Event.find({
-            eventID: eventID.toUpperCase()
+            // ✅ Case-insensitive exact match
+            eventID: new RegExp(`^${eventID}$`, 'i') 
         })
             .lean()
             .select({
@@ -91,6 +95,7 @@ async function getAmountAndMinimumNoOfParticipants(eventID) {
             });
 
         if (!eventAMT.length) {
+            console.error(`❌ Event not found in DB for ID: ${eventID}`);
             return {
                 amt: 0,
                 maximumNoOfParticipants: 0
