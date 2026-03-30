@@ -34,24 +34,24 @@ async function startAllProcesses() {
       .collection("events")
       .countDocuments();
 
-    if (eventCount === 0) {
-      await addAllEvents(events, eventsIDs);
-      console.log("✅ Events inserted");
-    } else {
-      console.log("⚡ Events already exist, skipping insert");
-    }
+    // if (eventCount === 0) {
+    //   await addAllEvents(events, eventsIDs);
+    //   console.log("✅ Events inserted");
+    // } else {
+    //   console.log("⚡ Events already exist, skipping insert");
+    // }
 
     // ✅ CHECK USERS COLLECTION
     const userCount = await mongoose.connection.db
       .collection("users")
       .countDocuments();
 
-    if (userCount === 0) {
-      await addInHouseUsers(users);
-      console.log("✅ Users inserted");
-    } else {
-      console.log("⚡ Users already exist, skipping insert");
-    }
+    // if (userCount === 0) {
+    //   await addInHouseUsers(users);
+    //   console.log("✅ Users inserted");
+    // } else {
+    //   console.log("⚡ Users already exist, skipping insert");
+    // }
 
     console.log("🎉 All processes completed successfully.");
   } catch (error) {

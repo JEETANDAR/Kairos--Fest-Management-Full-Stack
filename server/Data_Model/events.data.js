@@ -8,6 +8,7 @@ async function getEventsData() {
     try {
         const allEvents = await Event.find({})
             .lean()
+
             .select('-_id -__v');
 
         return allEvents;
@@ -22,39 +23,13 @@ async function getEventsData() {
  * 👉 WILL INSERT ONLY IF DATABASE IS EMPTY
  * 👉 WILL NOT OVERRIDE OR RE-INSERT DELETED DATA
  */
-async function addAllEvents(events, IDs) {
+async function addAllEvents(events) {
     try {
-        const eventCount = await Event.countDocuments();
-        const scoreCount = await Score.countDocuments();
-
-        console.log("Event count:", eventCount);
-        console.log("Score count:", scoreCount);
-
-        // ✅ ONLY INSERT EVENTS IF DB IS EMPTY
-        if (eventCount === 0) {
-            console.log("🚀 Inserting initial events...");
-            await Event.insertMany(events, { timeout: 20000 });
-        } else {
-            console.log("✅ Events already exist. No re-insert.");
-        }
-
-        // ✅ ONLY INSERT SCORES IF EMPTY
-        if (scoreCount === 0) {
-            console.log("🚀 Inserting initial scores...");
-
-            const scores = events.map((event) => ({
-                eventID: event.eventID.toUpperCase(),
-                eventName: event.eventName,
-                scores: []
-            }));
-
-            await Score.insertMany(scores, { timeout: 10000 });
-        } else {
-            console.log("✅ Scores already exist. No re-insert.");
-        }
-
+        console.log("🚀 Inserting events manually...");
+        await Event.insertMany(events);
+        console.log("✅ Events inserted");
     } catch (error) {
-        console.error("Error saving events or score data:", error);
+        console.error(error);
     }
 }
 
