@@ -125,21 +125,70 @@ const [orderData, setOrderData] = useState<{
     setShowDetails(true);
   };
 
+const checkFullCategorySelected = (category: string) => {
+  const categoryEvents = eventCategories[category] || [];
+  const categoryEventIds = categoryEvents.map(e => e.eventID);
+
+  return categoryEventIds.length > 0 &&
+    categoryEventIds.every(id => selectedEvents.includes(id!));
+};
+
   const calculateEventTotal = (eventId: string) => {
     const event = getAllEvents(eventCategories).find((e) => e.eventID === eventId);
     const teamCount = teams[eventId]?.length || 0;
     return teamCount * (event?.registrationFee || 0);
   };
+const OFFER_DEADLINE = new Date("2026-04-24T23:59:59");
+ const calculateTotalAmount = () => {
+  const now = new Date();
 
-  const calculateTotalAmount = () => {
-    if (isContingent) {
-      return 2600;
-    }
+  // ❌ AFTER DEADLINE → EVERYTHING NORMAL
+  if (now > OFFER_DEADLINE) {
     return selectedEvents.reduce(
       (total, eventId) => total + calculateEventTotal(eventId),
       0
     );
-  };
+  }
+
+  // ✅ BEFORE DEADLINE → APPLY OFFERS
+
+  // 🎯 Contingent offer
+  if (isContingent) {
+    return 2600;
+  }
+
+  const isAllTechnical = checkFullCategorySelected("Technical");
+  const isAllGaming = checkFullCategorySelected("Gaming");
+  const isAllCultural = checkFullCategorySelected("Cultural");
+
+  // 🎯 Combo pricing
+  if (
+    isAllTechnical &&
+    selectedEvents.length === eventCategories.Technical.length
+  ) {
+    return 900;
+  }
+
+  if (
+    isAllGaming &&
+    selectedEvents.length === eventCategories.Gaming.length
+  ) {
+    return 700;
+  }
+
+  if (
+    isAllCultural &&
+    selectedEvents.length === eventCategories.Cultural.length
+  ) {
+    return 1000;
+  }
+
+  // ✅ Default normal calculation
+  return selectedEvents.reduce(
+    (total, eventId) => total + calculateEventTotal(eventId),
+    0
+  );
+};
 
   const submitUserInformation = async (
     phone: string,
@@ -592,7 +641,7 @@ handler: async (response: any) => {
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center text-base sm:text-lg font-bold gap-2">
               <span>Total Amount:</span>
               <span className="text-purple-400">
-                ₹{calculateTotalAmount()} {isContingent && "(Contingent Discount Applied)"}
+                ₹{calculateTotalAmount()} {isContingent && new Date() <= OFFER_DEADLINE && "(Contingent Discount Applied)"}
               </span>
             </div>
           </div>
