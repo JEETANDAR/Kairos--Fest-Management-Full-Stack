@@ -4,6 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "install": "npm install --prefix client && npm install --prefix server",
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "concurrently \"npm run dev --prefix client\" \"npm run server --prefix server\"",
     "perdeploy:install": "npm install --prefix client && npm install --prefix server",
@@ -12,5 +13,8 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "dependencies": {
+    "concurrently": "^9.2.1"
+  }
 }
