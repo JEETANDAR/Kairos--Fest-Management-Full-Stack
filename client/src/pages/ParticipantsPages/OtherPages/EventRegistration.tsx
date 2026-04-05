@@ -9,6 +9,8 @@ interface EventRegistrationProps {
   onUpdateProfile: (updatedProfile: Partial<Profile>) => void;
 }
 
+const OFFER_DEADLINE = new Date("2026-04-24T23:59:59");
+
 const getAllEvents = (eventCategories: { [key: string]: Event[] }): Event[] => {
   return Object.values(eventCategories).flat();
 };
@@ -31,18 +33,18 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
   const [showPaymentOptions, setShowPaymentOptions] = useState(false);
   const [showOrderSummary, setShowOrderSummary] = useState(false);
   const [isLoadingOrder, setIsLoadingOrder] = useState(false);
-const [orderData, setOrderData] = useState<{
-  orderNo: number;
-  amount: number;
-  razorpayOrderId: string;
-} | null>(null);
+  const [orderData, setOrderData] = useState<{
+    orderNo: number;
+    amount: number;
+    razorpayOrderId: string;
+  } | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<string | null>(null);
   const [profileForm, setProfileForm] = useState({
     phone: userProfile.phone || "",
     college: userProfile.college || "",
   });
   const [eventCategories, setEventCategories] = useState<{
-    [key: string]: Event[]
+    [key: string]: Event[];
   }>({
     Technical: [],
     Cultural: [],
@@ -72,6 +74,114 @@ const [orderData, setOrderData] = useState<{
 
     getData();
   }, []);
+
+  // ─── OFFER LOGIC ────────────────────────────────────────────────────────────
+
+  const checkFullCategorySelected = (category: string) => {
+    const categoryEvents = eventCategories[category] || [];
+    const categoryEventIds = categoryEvents.map((e) => e.eventID);
+    return (
+      categoryEventIds.length > 0 &&
+      categoryEventIds.every((id) => selectedEvents.includes(id!))
+    );
+  };
+
+  const calculateEventTotal = (eventId: string) => {
+    const event = getAllEvents(eventCategories).find((e) => e.eventID === eventId);
+    const teamCount = teams[eventId]?.length || 0;
+    return teamCount * (event?.registrationFee || 0);
+  };
+
+  /**
+   * Returns { total, appliedOffers } so we can show the user what discounts
+   * were applied AND pass the final amount to the backend.
+   */
+  const calculateTotalAmountWithDetails = (): {
+    total: number;
+    isContingentOffer: boolean;
+    isTechnicalOffer: boolean;
+    isGamingOffer: boolean;
+    isCulturalOffer: boolean;
+    offerActive: boolean;
+  } => {
+    const now = new Date();
+    const offerActive = now <= OFFER_DEADLINE;
+
+    // After deadline → full price, no offers
+    if (!offerActive) {
+      return {
+        total: selectedEvents.reduce(
+          (sum, eventId) => sum + calculateEventTotal(eventId),
+          0
+        ),
+        isContingentOffer: false,
+        isTechnicalOffer: false,
+        isGamingOffer: false,
+        isCulturalOffer: false,
+        offerActive: false,
+      };
+    }
+
+    // Contingent offer (all events selected via button)
+    if (isContingent) {
+      return {
+        total: 2600,
+        isContingentOffer: true,
+        isTechnicalOffer: false,
+        isGamingOffer: false,
+        isCulturalOffer: false,
+        offerActive: true,
+      };
+    }
+
+    // Category-level offers
+    const isAllTechnical = checkFullCategorySelected("Technical");
+    const isAllGaming = checkFullCategorySelected("Gaming");
+    const isAllCultural = checkFullCategorySelected("Cultural");
+
+    let total = 0;
+
+    if (isAllTechnical) {
+      total += 900;
+    } else {
+      const techIds = eventCategories.Technical.map((e) => e.eventID);
+      total += selectedEvents
+        .filter((id) => techIds.includes(id))
+        .reduce((sum, id) => sum + calculateEventTotal(id), 0);
+    }
+
+    if (isAllGaming) {
+      total += 700;
+    } else {
+      const gamingIds = eventCategories.Gaming.map((e) => e.eventID);
+      total += selectedEvents
+        .filter((id) => gamingIds.includes(id))
+        .reduce((sum, id) => sum + calculateEventTotal(id), 0);
+    }
+
+    if (isAllCultural) {
+      total += 1000;
+    } else {
+      const culturalIds = eventCategories.Cultural.map((e) => e.eventID);
+      total += selectedEvents
+        .filter((id) => culturalIds.includes(id))
+        .reduce((sum, id) => sum + calculateEventTotal(id), 0);
+    }
+
+    return {
+      total,
+      isContingentOffer: false,
+      isTechnicalOffer: isAllTechnical,
+      isGamingOffer: isAllGaming,
+      isCulturalOffer: isAllCultural,
+      offerActive: true,
+    };
+  };
+
+  // Convenience wrapper used in JSX
+  const calculateTotalAmount = () => calculateTotalAmountWithDetails().total;
+
+  // ─── EVENT SELECTION ────────────────────────────────────────────────────────
 
   const handleEventToggle = (eventId: string, amount: number, max: number) => {
     setSelectedEvents((prevIds) =>
@@ -125,70 +235,7 @@ const [orderData, setOrderData] = useState<{
     setShowDetails(true);
   };
 
-const checkFullCategorySelected = (category: string) => {
-  const categoryEvents = eventCategories[category] || [];
-  const categoryEventIds = categoryEvents.map(e => e.eventID);
-
-  return categoryEventIds.length > 0 &&
-    categoryEventIds.every(id => selectedEvents.includes(id!));
-};
-
-  const calculateEventTotal = (eventId: string) => {
-    const event = getAllEvents(eventCategories).find((e) => e.eventID === eventId);
-    const teamCount = teams[eventId]?.length || 0;
-    return teamCount * (event?.registrationFee || 0);
-  };
-const OFFER_DEADLINE = new Date("2026-04-24T23:59:59");
- const calculateTotalAmount = () => {
-  const now = new Date();
-
-  // ❌ AFTER DEADLINE → EVERYTHING NORMAL
-  if (now > OFFER_DEADLINE) {
-    return selectedEvents.reduce(
-      (total, eventId) => total + calculateEventTotal(eventId),
-      0
-    );
-  }
-
-  // ✅ BEFORE DEADLINE → APPLY OFFERS
-
-  // 🎯 Contingent offer
-  if (isContingent) {
-    return 2600;
-  }
-
-  const isAllTechnical = checkFullCategorySelected("Technical");
-  const isAllGaming = checkFullCategorySelected("Gaming");
-  const isAllCultural = checkFullCategorySelected("Cultural");
-
-  // 🎯 Combo pricing
-  if (
-    isAllTechnical &&
-    selectedEvents.length === eventCategories.Technical.length
-  ) {
-    return 900;
-  }
-
-  if (
-    isAllGaming &&
-    selectedEvents.length === eventCategories.Gaming.length
-  ) {
-    return 700;
-  }
-
-  if (
-    isAllCultural &&
-    selectedEvents.length === eventCategories.Cultural.length
-  ) {
-    return 1000;
-  }
-
-  // ✅ Default normal calculation
-  return selectedEvents.reduce(
-    (total, eventId) => total + calculateEventTotal(eventId),
-    0
-  );
-};
+  // ─── PROFILE ────────────────────────────────────────────────────────────────
 
   const submitUserInformation = async (
     phone: string,
@@ -210,6 +257,8 @@ const OFFER_DEADLINE = new Date("2026-04-24T23:59:59");
     }
   };
 
+  // ─── PARTICIPANTS ───────────────────────────────────────────────────────────
+
   const handleParticipantChange = (
     eventId: string,
     teamId: string,
@@ -222,7 +271,12 @@ const OFFER_DEADLINE = new Date("2026-04-24T23:59:59");
       if (!updated[eventId]) updated[eventId] = {};
       if (!updated[eventId][teamId]) updated[eventId][teamId] = [];
       updated[eventId][teamId][index] = {
-        ...updated[eventId][teamId][index] || { name: "", email: "", phone: "", college: "" },
+        ...(updated[eventId][teamId][index] || {
+          name: "",
+          email: "",
+          phone: "",
+          college: "",
+        }),
         [field]: value,
       };
       return updated;
@@ -360,8 +414,10 @@ const OFFER_DEADLINE = new Date("2026-04-24T23:59:59");
       .filter((eventId) =>
         teams[eventId]?.some((team) => editMode[eventId]?.[team] ?? true)
       )
-      .map((eventId) =>
-        getAllEvents(eventCategories).find((e) => e.eventID === eventId)?.eventName || eventId
+      .map(
+        (eventId) =>
+          getAllEvents(eventCategories).find((e) => e.eventID === eventId)?.eventName ||
+          eventId
       );
   };
 
@@ -376,22 +432,29 @@ const OFFER_DEADLINE = new Date("2026-04-24T23:59:59");
     setShowOrderSummary(true);
   };
 
+  // ─── PAYMENT ─────────────────────────────────────────────────────────────────
+
   const handlePaymentSelection = async (isCashPayment = false) => {
     try {
+      // Calculate the correct discounted amount on the frontend
+      const { total: finalAmount } = calculateTotalAmountWithDetails();
+
       if (isCashPayment) {
-        const order = await proceedToPay(participants, true, isContingent);
+        // Pass finalAmount so backend doesn't recalculate
+        await proceedToPay(participants, true, isContingent, finalAmount);
         setPaymentMethod("Pay at Desk");
         saveRegistrationData("Pay at Desk");
         window.location.href = "/success";
       } else {
         setIsLoadingOrder(true);
-        const order = await proceedToPay(participants, false, isContingent);
+        // ⭐ Key fix: pass finalAmount to proceedToPay so backend uses our
+        //    offer-applied amount instead of recalculating from raw DB prices.
+        const order = await proceedToPay(participants, false, isContingent, finalAmount);
         setOrderData({
-  orderNo: order.orderNo,
-  amount: order.amount, // amount from backend
-  razorpayOrderId: order.razorpayOrderId, // ⭐
-});
-
+          orderNo: order.orderNo,
+          amount: order.amount,
+          razorpayOrderId: order.razorpayOrderId,
+        });
         setPaymentMethod("Online");
         setIsLoadingOrder(false);
       }
@@ -401,73 +464,71 @@ const OFFER_DEADLINE = new Date("2026-04-24T23:59:59");
     }
   };
 
-const handleProceedToPayment = () => {
-  if (!orderData) return alert("Order not created");
+  const handleProceedToPayment = () => {
+    if (!orderData) return alert("Order not created");
 
-  console.log("Opening Razorpay with:", orderData);
-const options = {
-  key: import.meta.env.VITE_RAZORPAY_KEY,
-  amount: orderData.amount * 100,
-  currency: "INR",
-  name: "Kairos 2026",
-  description: "Event Registration",
-  order_id: orderData.razorpayOrderId,
+    console.log("Opening Razorpay with:", orderData);
 
-  method: {
-    upi: true,          // ✅ FORCE SHOW UPI
-    card: true,
-    netbanking: true,
-    wallet: true,
-    paylater: true,
-  },
+    const options = {
+      key: import.meta.env.VITE_RAZORPAY_KEY,
+      amount: orderData.amount * 100,
+      currency: "INR",
+      name: "Kairos 2026",
+      description: "Event Registration",
+      order_id: orderData.razorpayOrderId,
 
-handler: async (response: any) => {
-  try {
-    const verifyRes = await fetch(
-      "http://localhost:9000/payment/verifyOrder",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          razorpay_payment_id: response.razorpay_payment_id,
-          razorpay_order_id: response.razorpay_order_id,
-          razorpay_signature: response.razorpay_signature,
-        }),
-      }
-    );
+      method: {
+        upi: true,
+        card: true,
+        netbanking: true,
+        wallet: true,
+        paylater: true,
+      },
 
-    const data = await verifyRes.json();
+      handler: async (response: any) => {
+        try {
+          const verifyRes = await fetch(
+            `${import.meta.env.VITE_API_BASE_URL || "http://localhost:9000"}/payment/verifyOrder`,
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                razorpay_payment_id: response.razorpay_payment_id,
+                razorpay_order_id: response.razorpay_order_id,
+                razorpay_signature: response.razorpay_signature,
+              }),
+            }
+          );
 
-    if (verifyRes.ok) {
-      console.log("Payment verified:", data);
-      window.location.href = "/success";
-    } else {
-      console.error("Verification failed:", data);
-      alert(data.status || "Payment verification failed");
-    }
-  } catch (err) {
-    console.error("Verification API error:", err);
-    alert("Server error during payment verification");
-  }
-},
+          const data = await verifyRes.json();
 
+          if (verifyRes.ok) {
+            console.log("Payment verified:", data);
+            window.location.href = "/success";
+          } else {
+            console.error("Verification failed:", data);
+            alert(data.status || "Payment verification failed");
+          }
+        } catch (err) {
+          console.error("Verification API error:", err);
+          alert("Server error during payment verification");
+        }
+      },
 
-  
-  prefill: {
-    name: userProfile.name,
-    email: userProfile.email,
-    contact: userProfile.phone,
-  },
+      prefill: {
+        name: userProfile.name,
+        email: userProfile.email,
+        contact: userProfile.phone,
+      },
 
-  theme: { color: "#7C3AED" },
-};
+      theme: { color: "#7C3AED" },
+    };
 
+    const rzp = new (window as any).Razorpay(options);
+    rzp.open();
+  };
 
-  const rzp = new (window as any).Razorpay(options);
-  rzp.open();
-};
-
-
+  // ─── HELPERS ─────────────────────────────────────────────────────────────────
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text).then(() => alert(`Copied: ${text}`));
@@ -507,6 +568,31 @@ handler: async (response: any) => {
     }
     return email;
   };
+
+  // ─── OFFER LABEL (shown in UI) ───────────────────────────────────────────────
+
+  const getOfferLabel = () => {
+    const now = new Date();
+    if (now > OFFER_DEADLINE) return null;
+
+    const {
+      isContingentOffer,
+      isTechnicalOffer,
+      isGamingOffer,
+      isCulturalOffer,
+    } = calculateTotalAmountWithDetails();
+
+    if (isContingentOffer) return "Contingent Discount Applied (All Events - ₹2600)";
+
+    const labels: string[] = [];
+    if (isTechnicalOffer) labels.push("Technical Bundle (₹900)");
+    if (isGamingOffer) labels.push("Gaming Bundle (₹700)");
+    if (isCulturalOffer) labels.push("Cultural Bundle (₹1000)");
+
+    return labels.length > 0 ? `Early Bird Offers: ${labels.join(", ")}` : null;
+  };
+
+  // ─── RENDER ──────────────────────────────────────────────────────────────────
 
   if (!userProfile.isProfileComplete) {
     return (
@@ -569,34 +655,59 @@ handler: async (response: any) => {
   }
 
   if (showOrderSummary) {
+    const offerLabel = getOfferLabel();
+
     return (
       <div className="max-w-4xl mx-auto p-4 sm:p-6 bg-gray-800 rounded-lg shadow-lg text-white">
-        <h2 className="text-xl sm:text-2xl font-bold mb-6 text-center underline">Order Summary</h2>
+        <h2 className="text-xl sm:text-2xl font-bold mb-6 text-center underline">
+          Order Summary
+        </h2>
         <div className="grid grid-cols-1 gap-6">
+          {/* User Info */}
           <div>
-            <h3 className="text-lg sm:text-xl font-semibold text-center mb-2">User Information</h3>
+            <h3 className="text-lg sm:text-xl font-semibold text-center mb-2">
+              User Information
+            </h3>
             <div className="bg-gray-700 p-4 rounded">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <p><span className="font-medium">Name:</span> {userProfile.name}</p>
-                <p><span className="font-medium">Email:</span> {userProfile.email}</p>
-                <p><span className="font-medium">Phone:</span> {userProfile.phone}</p>
-                <p><span className="font-medium">College:</span> {userProfile.college}</p>
+                <p>
+                  <span className="font-medium">Name:</span> {userProfile.name}
+                </p>
+                <p>
+                  <span className="font-medium">Email:</span> {userProfile.email}
+                </p>
+                <p>
+                  <span className="font-medium">Phone:</span> {userProfile.phone}
+                </p>
+                <p>
+                  <span className="font-medium">College:</span> {userProfile.college}
+                </p>
               </div>
             </div>
           </div>
+
+          {/* Selected Events */}
           <div>
-            <h3 className="text-lg sm:text-xl font-semibold text-center mb-2">Selected Events</h3>
+            <h3 className="text-lg sm:text-xl font-semibold text-center mb-2">
+              Selected Events
+            </h3>
             <div className="space-y-4">
               {selectedEvents.map((eventId, index) => {
-                const event = getAllEvents(eventCategories).find((e) => e.eventID === eventId);
+                const event = getAllEvents(eventCategories).find(
+                  (e) => e.eventID === eventId
+                );
                 const teamCount = teams[eventId]?.length || 0;
                 const eventTotal = calculateEventTotal(eventId);
-                const totalParticipants = Object.values(participants[eventId] || {}).flat().length;
+                const totalParticipants = Object.values(
+                  participants[eventId] || {}
+                ).flat().length;
 
                 return (
                   <div key={`${eventId}-${index}`} className="bg-gray-700 p-4 rounded">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-2">
-                      <h4 className="text-base sm:text-lg font-medium">{event?.eventName}</h4>
+                      <h4 className="text-base sm:text-lg font-medium">
+                        {event?.eventName}
+                      </h4>
                       <div className="flex items-center gap-2 text-sm sm:text-base">
                         {paymentMethod && (
                           <span className="bg-purple-600 text-white px-2 py-1 rounded">
@@ -604,29 +715,46 @@ handler: async (response: any) => {
                           </span>
                         )}
                         <span className="bg-purple-600 text-white px-2 py-1 rounded">
-                          {totalParticipants} Participant{totalParticipants !== 1 ? 's' : ''}
+                          {totalParticipants} Participant
+                          {totalParticipants !== 1 ? "s" : ""}
                         </span>
                       </div>
                     </div>
                     <div className="text-sm text-gray-300 grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <p>Teams: {teamCount}</p>
-                      <p>Total: ₹{event?.registrationFee} × {teamCount} = ₹{eventTotal}</p>
+                      <p>
+                        Base: ₹{event?.registrationFee} × {teamCount} = ₹{eventTotal}
+                      </p>
                     </div>
                     <div className="mt-4">
-                      <h4 className="text-base sm:text-lg font-medium mb-2">Participants Details</h4>
+                      <h4 className="text-base sm:text-lg font-medium mb-2">
+                        Participants Details
+                      </h4>
                       <div className="space-y-4">
                         {teams[eventId]?.map((team, teamIndex) => (
                           <div key={`${team}-${teamIndex}`}>
-                            <h5 className="text-sm sm:text-md font-semibold mb-2">Team: {team.split('-')[0]}</h5>
+                            <h5 className="text-sm sm:text-md font-semibold mb-2">
+                              Team: {team.split("-")[0]}
+                            </h5>
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                              {participants[eventId]?.[team]?.map((participant, index) => (
-                                <div key={`${team}-${index}`} className="mb-2 bg-gray-800 p-3 rounded">
-                                  <p>{participant.name}</p>
-                                  <p className="truncate" title={participant.email}>{truncateEmail(participant.email)}</p>
-                                  <p>{participant.phone}</p>
-                                  <p>{participant.college}</p>
-                                </div>
-                              ))}
+                              {participants[eventId]?.[team]?.map(
+                                (participant, pIndex) => (
+                                  <div
+                                    key={`${team}-${pIndex}`}
+                                    className="mb-2 bg-gray-800 p-3 rounded"
+                                  >
+                                    <p>{participant.name}</p>
+                                    <p
+                                      className="truncate"
+                                      title={participant.email}
+                                    >
+                                      {truncateEmail(participant.email)}
+                                    </p>
+                                    <p>{participant.phone}</p>
+                                    <p>{participant.college}</p>
+                                  </div>
+                                )
+                              )}
                             </div>
                           </div>
                         ))}
@@ -637,14 +765,18 @@ handler: async (response: any) => {
               })}
             </div>
           </div>
+
+          {/* Total */}
           <div className="bg-gray-700 p-4 rounded">
+            {offerLabel && (
+              <p className="text-green-400 text-sm mb-2 text-center">✓ {offerLabel}</p>
+            )}
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center text-base sm:text-lg font-bold gap-2">
               <span>Total Amount:</span>
-              <span className="text-purple-400">
-                ₹{calculateTotalAmount()} {isContingent && new Date() <= OFFER_DEADLINE && "(Contingent Discount Applied)"}
-              </span>
+              <span className="text-purple-400">₹{calculateTotalAmount()}</span>
             </div>
           </div>
+
           <div className="flex flex-col sm:flex-row justify-center gap-3">
             <button
               onClick={() => setShowPaymentOptions(true)}
@@ -661,11 +793,15 @@ handler: async (response: any) => {
             </button>
           </div>
         </div>
+
+        {/* Payment Modal */}
         {showPaymentOptions && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
             <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-bold text-center flex-1">Choose Payment Method</h2>
+                <h2 className="text-xl font-bold text-center flex-1">
+                  Choose Payment Method
+                </h2>
                 <button
                   onClick={() => setShowPaymentOptions(false)}
                   className="text-white hover:text-purple-400 transition-colors"
@@ -686,6 +822,7 @@ handler: async (response: any) => {
                   </svg>
                 </button>
               </div>
+
               <div className="space-y-4">
                 {isLoadingOrder ? (
                   <div className="text-center py-8">
@@ -714,9 +851,11 @@ handler: async (response: any) => {
                 ) : orderData && paymentMethod === "Online" ? (
                   <div className="space-y-4">
                     <p className="text-center text-sm text-gray-300">
-                      Please enter the <span className="font-bold">order no</span> and{" "}
-                      <span className="font-bold">total amount</span> correctly in the payment page
+                      Your discounted amount has been applied. Proceed to pay below.
                     </p>
+                    {offerLabel && (
+                      <p className="text-center text-sm text-green-400">✓ {offerLabel}</p>
+                    )}
                     <div className="flex justify-between items-center bg-gray-700 p-3 rounded">
                       <span className="font-medium">Order Number:</span>
                       <div className="flex items-center gap-2">
@@ -745,9 +884,12 @@ handler: async (response: any) => {
                     <div className="flex justify-between items-center bg-gray-700 p-3 rounded">
                       <span className="font-medium">Total Amount:</span>
                       <div className="flex items-center gap-2">
-                        <span>₹{orderData.amount}</span>
+                        {/* ⭐ This now shows the offer-applied amount from backend */}
+                        <span className="text-purple-400 font-bold">
+                          ₹{orderData.amount}
+                        </span>
                         <button
-                          onClick={() => copyToClipboard(`₹${orderData.amount}`)}
+                          onClick={() => copyToClipboard(`${orderData.amount}`)}
                           className="text-purple-400 hover:text-purple-500 transition-colors"
                         >
                           <svg
@@ -835,6 +977,7 @@ handler: async (response: any) => {
           {showDetails ? "PARTICIPANT DETAILS" : "SELECT EVENTS"}
         </h1>
       </div>
+
       {!showDetails ? (
         <>
           <div className="mb-6 flex justify-center">
@@ -843,6 +986,11 @@ handler: async (response: any) => {
               className="bg-green-600 text-white px-6 py-3 rounded hover:bg-green-700 transition-colors w-full sm:w-auto"
             >
               Register for All Events (Contingent)
+              {new Date() <= OFFER_DEADLINE && (
+                <span className="ml-2 text-xs bg-yellow-400 text-black px-2 py-0.5 rounded">
+                  Early Bird ₹2600
+                </span>
+              )}
             </button>
           </div>
 
@@ -852,44 +1000,54 @@ handler: async (response: any) => {
                 <button
                   className="w-full text-left text-lg sm:text-xl font-bold p-3 bg-gray-700 rounded hover:bg-gray-600 transition-colors"
                   onClick={() =>
-                    setExpandedCategory(expandedCategory === category ? null : category)
+                    setExpandedCategory(
+                      expandedCategory === category ? null : category
+                    )
                   }
                 >
-                  {category} {expandedCategory === category ? "-" : "+"}
+                  {category}{" "}
+                  {checkFullCategorySelected(category) &&
+                    new Date() <= OFFER_DEADLINE && (
+                      <span className="ml-2 text-xs bg-yellow-400 text-black px-2 py-0.5 rounded">
+                        Bundle offer active
+                      </span>
+                    )}
+                  {expandedCategory === category ? " -" : " +"}
                 </button>
-                {expandedCategory === category && eventCategories[category]?.length > 0 && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-                    {eventCategories[category].map((event) => (
-                      <div
-                        key={event.eventID}
-                        className={`cursor-pointer transition-all duration-300 flex flex-col items-center p-4 rounded ${
-                          selectedEvents.includes(event.eventID!)
-                            ? "ring-4 ring-purple-500 bg-gray-700"
-                            : "bg-gray-700 hover:bg-gray-600"
-                        }`}
-                        onClick={() =>
-                          handleEventToggle(
-                            event.eventID!,
-                            event.registrationFee!,
-                            event.maximumNoOfParticipants!
-                          )
-                        }
-                      >
-                        <img
-                          src={event.img || ""}
-                          alt={event.eventName}
-                          className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded"
-                        />
-                        <h3 className="text-center mt-2 text-sm sm:text-lg">
-                          {event.eventName}
-                        </h3>
-                        <p className="text-purple-400 mt-1 text-sm sm:text-base">
-                          ₹{event.registrationFee}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                {expandedCategory === category &&
+                  eventCategories[category]?.length > 0 && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+                      {eventCategories[category].map((event) => (
+                        <div
+                          key={event.eventID}
+                          className={`cursor-pointer transition-all duration-300 flex flex-col items-center p-4 rounded ${
+                            selectedEvents.includes(event.eventID!)
+                              ? "ring-4 ring-purple-500 bg-gray-700"
+                              : "bg-gray-700 hover:bg-gray-600"
+                          }`}
+                          onClick={() =>
+                            handleEventToggle(
+                              event.eventID!,
+                              event.registrationFee!,
+                              event.maximumNoOfParticipants!
+                            )
+                          }
+                        >
+                          <img
+                            src={event.img || ""}
+                            alt={event.eventName}
+                            className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded"
+                          />
+                          <h3 className="text-center mt-2 text-sm sm:text-lg">
+                            {event.eventName}
+                          </h3>
+                          <p className="text-purple-400 mt-1 text-sm sm:text-base">
+                            ₹{event.registrationFee}
+                          </p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
               </div>
             ))}
           </div>
@@ -908,7 +1066,9 @@ handler: async (response: any) => {
           <>
             <div className="space-y-6">
               {selectedEvents.map((eventId) => {
-                const event = getAllEvents(eventCategories)?.find((e) => e.eventID === eventId);
+                const event = getAllEvents(eventCategories)?.find(
+                  (e) => e.eventID === eventId
+                );
                 const teamCount = teams[eventId]?.length || 0;
                 const eventTotal = calculateEventTotal(eventId);
 
@@ -922,77 +1082,84 @@ handler: async (response: any) => {
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
                       <h2 className="text-lg sm:text-xl font-bold">{event?.eventName}</h2>
                       <div className="text-purple-400 font-semibold text-sm sm:text-base">
-                        Total: ₹{eventTotal} ({teamCount} teams × ₹{event?.registrationFee})
+                        Base: ₹{eventTotal} ({teamCount} teams × ₹
+                        {event?.registrationFee})
                       </div>
                     </div>
                     <div className="space-y-4">
                       {teams[eventId]?.map((team, teamIndex) => (
                         <div key={`${team}-${teamIndex}`}>
-                          <h3 className="text-base sm:text-lg font-bold">{team.split('-')[0]}</h3>
+                          <h3 className="text-base sm:text-lg font-bold">
+                            {team.split("-")[0]}
+                          </h3>
                           <div className="space-y-4 mt-2">
-                            {participants[eventId]?.[team]?.map((participant, index) => (
-                              <div
-                                key={`${team}-${index}`}
-                                className="grid grid-cols-1 md:grid-cols-2 gap-4"
-                              >
-                                <input
-                                  type="text"
-                                  placeholder="Co-participant Name"
-                                  className="w-full p-2 rounded bg-gray-800 text-white border border-gray-600 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-                                  value={participant.name}
-                                  onChange={(e) =>
-                                    handleParticipantChange(
-                                      eventId,
-                                      team,
-                                      index,
-                                      "name",
-                                      e.target.value
-                                    )
-                                  }
-                                  disabled={!(editMode[eventId]?.[team] ?? true)}
-                                />
-                                <input
-                                  type="email"
-                                  placeholder="Email"
-                                  className="w-full p-2 rounded bg-gray-800 text-white border border-gray-600 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-                                  value={participant.email}
-                                  onChange={(e) =>
-                                    handleParticipantChange(
-                                      eventId,
-                                      team,
-                                      index,
-                                      "email",
-                                      e.target.value.toLowerCase()
-                                    )
-                                  }
-                                  disabled={!(editMode[eventId]?.[team] ?? true)}
-                                />
-                                <input
-                                  type="tel"
-                                  placeholder="Phone Number"
-                                  className="w-full p-2 rounded bg-gray-800 text-white border border-gray-600 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-                                  value={participant.phone}
-                                  onChange={(e) =>
-                                    handleParticipantChange(
-                                      eventId,
-                                      team,
-                                      index,
-                                      "phone",
-                                      e.target.value.replace(/\D/g, "").slice(0, 10)
-                                    )
-                                  }
-                                  disabled={!(editMode[eventId]?.[team] ?? true)}
-                                />
-                                {(editMode[eventId]?.[team] ?? true) && (
-                                  <button
-                                    onClick={() => deleteParticipant(eventId, team, index)}
-                                    className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors w-full md:w-auto"
-                                  >
-                                    Delete
-                                  </button>
-                                )}
-                              </div>
-                            ))}
+                            {participants[eventId]?.[team]?.map(
+                              (participant, index) => (
+                                <div
+                                  key={`${team}-${index}`}
+                                  className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                                >
+                                  <input
+                                    type="text"
+                                    placeholder="Co-participant Name"
+                                    className="w-full p-2 rounded bg-gray-800 text-white border border-gray-600 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                                    value={participant.name}
+                                    onChange={(e) =>
+                                      handleParticipantChange(
+                                        eventId,
+                                        team,
+                                        index,
+                                        "name",
+                                        e.target.value
+                                      )
+                                    }
+                                    disabled={!(editMode[eventId]?.[team] ?? true)}
+                                  />
+                                  <input
+                                    type="email"
+                                    placeholder="Email"
+                                    className="w-full p-2 rounded bg-gray-800 text-white border border-gray-600 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                                    value={participant.email}
+                                    onChange={(e) =>
+                                      handleParticipantChange(
+                                        eventId,
+                                        team,
+                                        index,
+                                        "email",
+                                        e.target.value.toLowerCase()
+                                      )
+                                    }
+                                    disabled={!(editMode[eventId]?.[team] ?? true)}
+                                  />
+                                  <input
+                                    type="tel"
+                                    placeholder="Phone Number"
+                                    className="w-full p-2 rounded bg-gray-800 text-white border border-gray-600 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                                    value={participant.phone}
+                                    onChange={(e) =>
+                                      handleParticipantChange(
+                                        eventId,
+                                        team,
+                                        index,
+                                        "phone",
+                                        e.target.value.replace(/\D/g, "").slice(0, 10)
+                                      )
+                                    }
+                                    disabled={!(editMode[eventId]?.[team] ?? true)}
+                                  />
+                                  {(editMode[eventId]?.[team] ?? true) && (
+                                    <button
+                                      onClick={() =>
+                                        deleteParticipant(eventId, team, index)
+                                      }
+                                      className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors w-full md:w-auto"
+                                    >
+                                      Delete
+                                    </button>
+                                  )}
+                                </div>
+                              )
+                            )}
                             <div className="flex flex-wrap gap-2">
                               {(editMode[eventId]?.[team] ?? true) && (
                                 <>
@@ -1055,14 +1222,20 @@ handler: async (response: any) => {
                 );
               })}
             </div>
+
+            {/* Live total with offer label */}
             <div className="bg-gray-800 p-4 rounded-lg my-6">
+              {getOfferLabel() && (
+                <p className="text-green-400 text-sm mb-2 text-center">
+                  ✓ {getOfferLabel()}
+                </p>
+              )}
               <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center text-base sm:text-lg font-bold gap-2">
                 <span>Total Amount:</span>
-                <span className="text-purple-400">
-                  ₹{calculateTotalAmount()} {isContingent && "(Contingent Discount Applied)"}
-                </span>
+                <span className="text-purple-400">₹{calculateTotalAmount()}</span>
               </div>
             </div>
+
             <div className="flex flex-col sm:flex-row justify-center gap-4 mt-8">
               <button
                 onClick={() => setShowDetails(false)}
@@ -1084,9 +1257,13 @@ handler: async (response: any) => {
             </div>
             {!isAllSaved() && (
               <div className="mt-4 p-3 bg-yellow-900 text-yellow-200 rounded text-center">
-                <p>Note- The Contigent Early Bird Offer will only remain till 24th April 2026</p>
+                <p>
+                  Note — The Contingent Early Bird Offer is valid till 24th April 2026
+                </p>
                 <p>Please save all teams before submitting.</p>
-                <p className="font-semibold mt-1">Unsaved events: {getUnsavedEvents().join(", ")}</p>
+                <p className="font-semibold mt-1">
+                  Unsaved events: {getUnsavedEvents().join(", ")}
+                </p>
               </div>
             )}
           </>

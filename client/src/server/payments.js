@@ -1,28 +1,27 @@
 import axios from "axios";
 import URL from "./serverURL_link";
 
-/**
- * CREATE ORDER (Cash / Online)
- */
 const proceedToPay = async (
   participants,
   isCashPayment,
-  isContingentSelection
+  isContingentSelection,
+  finalAmount
 ) => {
   try {
     const paymentMethod = isCashPayment ? "cash" : "online";
-    
+
     const payload = {
       paymentMethod,
       eventsValues: participants,
       isContingentSelection,
+      finalAmount,
     };
 
     const response = await axios.post(
       `${URL}payment/orders`,
       payload,
       {
-        withCredentials: true, // 🔥 VERY IMPORTANT
+        withCredentials: true,
         headers: {
           "Content-Type": "application/json",
         },
@@ -36,16 +35,13 @@ const proceedToPay = async (
   }
 };
 
-/**
- * VERIFY RAZORPAY PAYMENT
- */
 const validatePayment = async (responseData) => {
   try {
     const response = await axios.post(
       `${URL}payment/verifyOrder`,
       responseData,
       {
-        withCredentials: true, // 🔥 KEEP SESSION CONSISTENT
+        withCredentials: true,
         headers: {
           "Content-Type": "application/json",
         },
