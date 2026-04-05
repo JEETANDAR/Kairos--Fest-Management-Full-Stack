@@ -83,6 +83,41 @@ async function startServer() {
         app.use('/api/payment', razorpayRouter);
         app.use('/api/coordinator', checkIfCoordinator, coordinatorRouter);
 
+        // ✅ Participants Data API (VERY IMPORTANT)
+const Order = require('./schema/Payment/orderNO.schema'); // adjust path if needed
+
+app.get('/api/participants', async (req, res) => {
+    try {
+        const data = await Order.aggregate([
+            {
+                $lookup: {
+                    from: "userdatas",
+                    localField: "emails",
+                    foreignField: "emailID",
+                    as: "participants"
+                }
+            },
+            { $unwind: "$participants" },
+            {
+                $project: {
+                    name: "$participants.name",
+                    email: "$participants.emailID",
+                    phone: "$participants.phoneNo",
+                    college: "$participants.collegeName",
+                    events: "$events",
+                    paymentMethod: "$paymentMethod",
+                    amount: "$amount"
+                }
+            }
+        ]);
+
+        res.json(data);
+    } catch (err) {
+        console.error("Participants API Error:", err);
+        res.status(500).json({ error: "Failed to fetch participants" });
+    }
+});
+
         // Endpoint to View All Routes
         app.get('/routes', (req, res) => {
             res.json(listEndpoints(app));
