@@ -1,5 +1,3 @@
-
-
 const http = require('http');
 const express = require('express');
 const path = require('path');
@@ -75,7 +73,7 @@ async function startServer() {
         // Middleware
         app.use(helmet({ contentSecurityPolicy: false }));
 	    
-	 app.use(express.json());
+	    app.use(express.json());
 
         // API Routes (original paths)
         app.use('/api/', homePageDetails);
@@ -83,40 +81,55 @@ async function startServer() {
         app.use('/api/payment', razorpayRouter);
         app.use('/api/coordinator', checkIfCoordinator, coordinatorRouter);
 
-        // ✅ Participants Data API (VERY IMPORTANT)
-const Order = require('./schema/Payment/orderNO.schema'); // adjust path if needed
+        // ✅ Participants Data API
+        const Order = require('./schema/Payment/orderNO.schema');
+        const UserData = require('./schema/Users/UserData.schema');
 
-app.get('/api/participants', async (req, res) => {
-    try {
-        const data = await Order.aggregate([
-            {
-                $lookup: {
-                    from: "userdatas",
-                    localField: "emails",
-                    foreignField: "emailID",
-                    as: "participants"
+        app.get('/api/participants', async (req, res) => {
+            try {
+                // Step 1: Get all orders
+                const orders = await Order.find({}).lean();
+
+                const results = [];
+
+                for (const order of orders) {
+                    // order.emails is an array of all participant email strings
+                    const emails = order.emails || [];
+
+                    // Step 2: Look up each email in userdatas
+                    const userMap = {};
+                    const usersFound = await UserData.find({ emailID: { $in: emails } })
+                        .lean()
+                        .select({ emailID: 1, name: 1, phoneNo: 1, collegeName: 1 });
+
+                    for (const u of usersFound) {
+                        userMap[u.emailID.toLowerCase()] = u;
+                    }
+
+                    // Step 3: Build one row per participant
+                    for (const email of emails) {
+                        const userInfo = userMap[email.toLowerCase()];
+
+                        results.push({
+                            // ✅ Name: from userdatas if available, else fallback to email prefix
+                            name: (userInfo && userInfo.name) ? userInfo.name : email.split('@')[0],
+                            email: email,
+                            phone: (userInfo && userInfo.phoneNo) ? userInfo.phoneNo : '',
+                            college: (userInfo && userInfo.collegeName) ? userInfo.collegeName : '',
+                            events: order.events,          // the full events object { eventID: [emails] }
+                            paymentMethod: order.paymentMethod,
+                            amount: order.amount,
+                            orderNo: order.orderNo,
+                        });
+                    }
                 }
-            },
-            { $unwind: "$participants" },
-            {
-                $project: {
-                    name: "$participants.name",
-                    email: "$participants.emailID",
-                    phone: "$participants.phoneNo",
-                    college: "$participants.collegeName",
-                    events: "$events",
-                    paymentMethod: "$paymentMethod",
-                    amount: "$amount"
-                }
+
+                res.json(results);
+            } catch (err) {
+                console.error("Participants API Error:", err);
+                res.status(500).json({ error: "Failed to fetch participants" });
             }
-        ]);
-
-        res.json(data);
-    } catch (err) {
-        console.error("Participants API Error:", err);
-        res.status(500).json({ error: "Failed to fetch participants" });
-    }
-});
+        });
 
         // Endpoint to View All Routes
         app.get('/routes', (req, res) => {

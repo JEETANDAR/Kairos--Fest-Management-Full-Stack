@@ -75,8 +75,8 @@ async function generateOrderDetails(req, res) {
     }
 
     let flattenEmails = {};
-    let allEmails = [];
-    // Raw total used only for backend validation, not for charging
+    let allEmails = [];           // plain email strings for OrderNo schema
+    let allParticipants = [];     // full objects { email, name, phone, college } for upsert
     let rawTotal = 0;
 
     for (const event of Object.keys(eventsValues)) {
@@ -96,38 +96,46 @@ async function generateOrderDetails(req, res) {
         }
       }
 
-      const participants = teamsForEvent
-        .flat()
-        .map((p) => p.email.toLowerCase());
+      // Flatten all participants across teams for this event
+      const participantsForEvent = teamsForEvent.flat();
+
+      // Extract plain emails for the OrderNo schema
+      const emailsForEvent = participantsForEvent.map((p) => {
+        // Support both { email } and { emailID } shapes from the frontend
+        return (p.email || p.emailID || '').toLowerCase();
+      });
 
       rawTotal += amt * teamsForEvent.length;
 
-      flattenEmails[event] = participants;
-      allEmails.push(...participants);
+      flattenEmails[event] = emailsForEvent;
+      allEmails.push(...emailsForEvent);
 
-      await bulkUserCheckIn(participants);
+      // Collect full participant objects so we can upsert name/phone/college
+      participantsForEvent.forEach(p => {
+        allParticipants.push({
+          email: (p.email || p.emailID || '').toLowerCase(),
+          name: p.name || '',
+          phone: p.phone || p.phoneNo || '',
+          college: p.college || p.collegeName || '',
+        });
+      });
     }
 
-    // ─── AMOUNT RESOLUTION ────────────────────────────────────────────────────
-    // Priority:
-    //   1. If frontend sent a finalAmount AND it's before the deadline → trust it
-    //      (offer logic lives in the frontend and has been validated there)
-    //   2. If contingent is flagged AND before deadline → ₹2600 (safety net)
-    //   3. Otherwise → use rawTotal from DB prices (no offer)
+    // ✅ Upsert all participants into userdatas WITH their name/phone/college
+    await bulkUserCheckIn(allParticipants);
 
+    // ─── AMOUNT RESOLUTION ────────────────────────────────────────────────────
     let totalAmount;
     const now = new Date();
     const offerActive = now <= OFFER_DEADLINE;
 
     if (offerActive && typeof finalAmount === "number" && finalAmount > 0) {
-      // Basic sanity check: finalAmount should never be MORE than raw total
       if (finalAmount > rawTotal) {
         console.warn(
           `⚠️  Frontend finalAmount (${finalAmount}) > rawTotal (${rawTotal}). Falling back to rawTotal.`
         );
         totalAmount = rawTotal;
       } else {
-        // Trust the frontend offer-applied price
         totalAmount = finalAmount;
       }
     } else if (offerActive && isContingentSelection) {
