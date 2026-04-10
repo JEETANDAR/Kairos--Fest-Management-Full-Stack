@@ -1,7 +1,7 @@
 import { Divide } from "lucide-react";
 import ebin from "./team photo/ebi1.jpg"
 import lincy from "./team photo/lincy.jpg"
-import Prakash from "./team photo/prakash.jpg"
+import Prakash from "./team photo/prakash.jpeg"
 import Greeshma from "./team photo/missGreeshma.jpg"
 import Manjula from "./team photo/missManjula.jpg"
 import Suhas from "./team photo/mrSuhas.jpg"
