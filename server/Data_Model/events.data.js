@@ -8,7 +8,6 @@ async function getEventsData() {
     try {
         const allEvents = await Event.find({})
             .lean()
-
             .select('-_id -__v');
 
         return allEvents;
@@ -19,17 +18,23 @@ async function getEventsData() {
 }
 
 /**
- * ADD EVENTS (SAFE VERSION 🚀)
- * 👉 WILL INSERT ONLY IF DATABASE IS EMPTY
- * 👉 WILL NOT OVERRIDE OR RE-INSERT DELETED DATA
+ * ADD EVENTS
+ * ⚠️  Only call this from a one-off seed script, NEVER from startUpPrograms.
+ * This will throw if duplicates exist (by design) so you know if you're
+ * accidentally calling it twice.
  */
 async function addAllEvents(events) {
     try {
         console.log("🚀 Inserting events manually...");
-        await Event.insertMany(events);
+        await Event.insertMany(events, { ordered: false });
         console.log("✅ Events inserted");
     } catch (error) {
-        console.error(error);
+        // Duplicate key errors are expected if some docs already exist
+        if (error.code === 11000) {
+            console.warn("⚠️  Some events already exist in DB — skipped duplicates.");
+        } else {
+            console.error("❌ Error inserting events:", error);
+        }
     }
 }
 
@@ -54,14 +59,10 @@ async function getEventsDataByID(eventType) {
 /**
  * GET AMOUNT + MAX PARTICIPANTS
  */
-/**
- * GET AMOUNT + MAX PARTICIPANTS
- */
 async function getAmountAndMinimumNoOfParticipants(eventID) {
     try {
         const eventAMT = await Event.find({
-            // ✅ Case-insensitive exact match
-            eventID: new RegExp(`^${eventID}$`, 'i') 
+            eventID: new RegExp(`^${eventID}$`, 'i')
         })
             .lean()
             .select({

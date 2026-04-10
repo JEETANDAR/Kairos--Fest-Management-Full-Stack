@@ -14,20 +14,19 @@ const userDefinedRouts = require(path.join(__dirname, "Routs_Model", "UserDefine
 const razorpayRouter = require('./Routs_Model/Payment/payment.router');
 const coordinatorRouter = require('./Routs_Model/coordinator/coordinator.router');
 
-// Authentication logic 
+// Authentication logic
 const { initializeAuth, setupAuthRoutes, checkIfCoordinator } = require("./Authentication_Files/auth");
 const { startAllProcesses } = require('./utils/startUpPrograms');
+
 const app = express();
 const PORT_NO = 9000;
-
 
 // ✅ Function to Start the Server AFTER startAllProcesses()
 async function startServer() {
     try {
         console.log("🔄 Running startAllProcesses...");
-        await startAllProcesses();  // ✅ Ensure this completes before server starts
+        await startAllProcesses();  // ✅ Only connects DB now — no seeding
         console.log("✅ startAllProcesses completed successfully!");
-
 
         // Initialize authentication middleware
         initializeAuth(app);
@@ -72,10 +71,9 @@ async function startServer() {
 
         // Middleware
         app.use(helmet({ contentSecurityPolicy: false }));
-	    
-	    app.use(express.json());
+        app.use(express.json());
 
-        // API Routes (original paths)
+        // API Routes
         app.use('/api/', homePageDetails);
         app.use('/api/userRout', userDefinedRouts);
         app.use('/api/payment', razorpayRouter);
@@ -87,16 +85,12 @@ async function startServer() {
 
         app.get('/api/participants', async (req, res) => {
             try {
-                // Step 1: Get all orders
                 const orders = await Order.find({}).lean();
-
                 const results = [];
 
                 for (const order of orders) {
-                    // order.emails is an array of all participant email strings
                     const emails = order.emails || [];
 
-                    // Step 2: Look up each email in userdatas
                     const userMap = {};
                     const usersFound = await UserData.find({ emailID: { $in: emails } })
                         .lean()
@@ -106,17 +100,14 @@ async function startServer() {
                         userMap[u.emailID.toLowerCase()] = u;
                     }
 
-                    // Step 3: Build one row per participant
                     for (const email of emails) {
                         const userInfo = userMap[email.toLowerCase()];
-
                         results.push({
-                            // ✅ Name: from userdatas if available, else fallback to email prefix
                             name: (userInfo && userInfo.name) ? userInfo.name : email.split('@')[0],
                             email: email,
                             phone: (userInfo && userInfo.phoneNo) ? userInfo.phoneNo : '',
                             college: (userInfo && userInfo.collegeName) ? userInfo.collegeName : '',
-                            events: order.events,          // the full events object { eventID: [emails] }
+                            events: order.events,
                             paymentMethod: order.paymentMethod,
                             amount: order.amount,
                             orderNo: order.orderNo,
@@ -151,22 +142,18 @@ async function startServer() {
             res.status(204).end();
         });
 
-
-
-        // Create server
+        // Create and start server
         const server = http.createServer(app);
-
-        // Start Server after `startAllProcesses()` completes
-        server.listen(PORT_NO, () => console.log(`🚀 Server is running on http://localhost:${PORT_NO} & Node Env ${process.env.NODE_ENV}`));
+        server.listen(PORT_NO, () =>
+            console.log(`🚀 Server is running on http://localhost:${PORT_NO} & Node Env ${process.env.NODE_ENV}`)
+        );
 
     } catch (error) {
-        console.error("❌ Error in startAllProcesses:", error);
-        process.exit(1);  // Stop execution if `startAllProcesses()` fails
+        console.error("❌ Error in startServer:", error);
+        process.exit(1);
     }
 }
 
-
-// Start the Server
 startServer();
 
 module.exports = app;
