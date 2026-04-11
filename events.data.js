@@ -1,0 +1,435 @@
+/**
+ * 📦 EVENTS SEED DATA
+ *
+ * This is the single source-of-truth for all event data.
+ * The server will compare its database against this list on startup
+ * and insert any missing events automatically.
+ *
+ * ➡️  Add / edit events here, and the sync function will keep
+ *     the database in line.
+ */
+
+const events = [
+    [
+        {
+            "eventID": "IT_QUIZ",
+            "eventType": "TECHNICAL",
+            "eventName": "IT Quiz",
+            "img": "https://bookends.in/wp-content/uploads/2020/12/IT.jpg",
+            "studentCoordinator_1": "Sanjay",
+            "studentCoordinator_2": "Princy",
+            "studentCoordinator_3": "Sahana",
+            "studentCoordinator_1PhoneNO": "+91 9380941630",
+            "studentCoordinator_2PhoneNO": "+91 7676150220",
+            "studentCoordinator_3PhoneNO": "+91 7019387040",
+            "studentCoordinator_Email_IDA": "itquiz@kairos.com",
+            "facultyCoordinator_1": "Ms. Manjula",
+            "facultyCoordinator_1PhoneNO": "+91 8095379852",
+            "facultyCoordinator_email": "kairos@stpaulscollege.edu",
+            "registrationFee": 250,
+            "venue": "Room 107",
+            "minimumNoOfParticipants": 1,
+            "maximumNoOfParticipants": 2,
+            "winners": 2500,
+            "runners": 1300,
+            "description": [
+                "Maximum 2 members per team",
+                "3 rounds: Aptitude, Pictogram, Buzzer",
+                "Instructions on spot",
+                "No malpractice",
+                "Judges decision final"
+            ]
+        },
+
+        {
+            "eventID": "WEB_AI",
+            "eventType": "TECHNICAL",
+            "eventName": "Web AI",
+            "img": "https://educationalexcellence.in/wp-content/uploads/2024/09/webai.png",
+            "studentCoordinator_1": "Olivia",
+            "studentCoordinator_2": "Ankitha",
+            "studentCoordinator_3": "Divya",
+            "studentCoordinator_1PhoneNO": "+91 8075820081",
+            "studentCoordinator_2PhoneNO": "+91 9353501039",
+            "studentCoordinator_3PhoneNO": "+91 7026825072",
+            "studentCoordinator_Email_IDA": "webai@kairos.com",
+            "facultyCoordinator_1": "Ms. Lincy",
+            "facultyCoordinator_1PhoneNO": "+91 9738710164",
+            "facultyCoordinator_email": "kairos@stpaulscollege.edu",
+            "registrationFee": 250,
+            "venue": "Room 118",
+            "minimumNoOfParticipants": 1,
+            "maximumNoOfParticipants": 2,
+            "winners": 2500,
+            "runners": 1300,
+            "description": [
+                "2 participants per team",
+                "Bring your own systems",
+                "Build website using AI",
+                "Open source AI allowed",
+                "2 rounds: Prompting & Presentation"
+            ]
+        },
+
+        {
+            "eventID": "CODING",
+            "eventType": "TECHNICAL",
+            "eventName": "Coding & Debugging",
+            "img": "https://img.freepik.com/premium-photo/person-debugging-code-with-coffee-cup-nearby-conveying-latenight-coding-session_342166-8614.jpg?semt=ais_hybrid&w=740&q=80",
+            "studentCoordinator_1": "Sahil",
+            "studentCoordinator_2": "Yogesh",
+            "studentCoordinator_3": "Abijith",
+            "studentCoordinator_1PhoneNO": "+91 8722658269",
+            "studentCoordinator_2PhoneNO": "+91 7676294007",
+            "studentCoordinator_3PhoneNO": "+91 9961876562",
+            "studentCoordinator_Email_IDA": "coding@kairos.com",
+            "facultyCoordinator_1": "Ms. Lincy",
+            "facultyCoordinator_1PhoneNO": "+91 9738710164",
+            "facultyCoordinator_email": "kairos@stpaulscollege.edu",
+            "registrationFee": 200,
+            "venue": "Lab 1",
+            "minimumNoOfParticipants": 1,
+            "maximumNoOfParticipants": 2,
+            "winners": 2000,
+            "runners": 1000,
+            "description": [
+                "Teams of 1-2",
+                "No internet usage",
+                "No discussion between teams",
+                "Use allowed editors",
+                "Malpractice leads to disqualification"
+            ]
+        },
+
+        {
+            "eventID": "TREASURE_HUNT",
+            "eventType": "TECHNICAL",
+            "eventName": "Technical Treasure Hunt",
+            "img": "https://makingteams.com/wp-content/uploads/2024/10/Treasure-Hunt-Games-for-Team-Building-1.png",
+            "studentCoordinator_1": "Darshn",
+            "studentCoordinator_2": "Kavya",
+            "studentCoordinator_3": "Ajay",
+            "studentCoordinator_1PhoneNO": "+91 6366806447",
+            "studentCoordinator_2PhoneNO": "+91 9164915591",
+            "studentCoordinator_3PhoneNO": "+91 8217476479",
+            "studentCoordinator_Email_IDA": "treasure@kairos.com",
+            "facultyCoordinator_1": "Ms. Manjula",
+            "facultyCoordinator_1PhoneNO": "+91 8095379852",
+            "facultyCoordinator_email": "kairos@stpaulscollege.edu",
+            "registrationFee": 400,
+            "venue": "Basketball Court",
+            "minimumNoOfParticipants": 4,
+            "maximumNoOfParticipants": 8,
+            "winners": 4000,
+            "runners": 2000,
+            "description": [
+                "Max 8 members",
+                "Only one phone per team",
+                "Follow instructions",
+                "No disputes",
+                "Be punctual"
+            ]
+        },
+
+        {
+            "eventID": "IT_MANAGER",
+            "eventType": "TECHNICAL",
+            "eventName": "IT Manager",
+            "img": "https://www.herzing.edu/sites/default/files/styles/fp_960_480/public/2020-09/how-to-become-it-manager.jpg.webp?itok=lwQyu6da",
+            "studentCoordinator_1": "Rizwana",
+            "studentCoordinator_2": "Madhumitha",
+            "studentCoordinator_3": "Sushmitha",
+            "studentCoordinator_1PhoneNO": "+91 6360432178",
+            "studentCoordinator_2PhoneNO": "+91 8310873241",
+            "studentCoordinator_3PhoneNO": "+91 8951664897",
+            "studentCoordinator_Email_IDA": "manager@kairos.com",
+            "facultyCoordinator_1": "Ms. Lincy",
+            "facultyCoordinator_1PhoneNO": "+91 9738710164",
+            "facultyCoordinator_email": "kairos@stpaulscollege.edu",
+            "registrationFee": 200,
+            "venue": "Mini Auditorium",
+            "minimumNoOfParticipants": 1,
+            "maximumNoOfParticipants": 1,
+            "winners": 1500,
+            "runners": 750,
+            "description": [
+                "3 rounds: Aptitude, GD, Stress",
+                "Topics on spot",
+                "No malpractice",
+                "Judges decision final"
+            ]
+        },
+
+        {
+            "eventID": "BGMI",
+            "eventType": "GAMING",
+            "eventName": "BGMI",
+            "img": "https://wallpapercave.com/wp/wp2137727.png",
+            "studentCoordinator_1": "Eshan",
+            "studentCoordinator_2": "Zayed",
+            "studentCoordinator_3": "Shree",
+            "studentCoordinator_1PhoneNO": "+91 9036328731",
+            "studentCoordinator_2PhoneNO": "+91 6362675597",
+            "studentCoordinator_3PhoneNO": "+91 7019698908",
+            "studentCoordinator_Email_IDA": "bgmi@kairos.com",
+            "facultyCoordinator_1": "Ms. Manjula",
+            "facultyCoordinator_1PhoneNO": "+91 8095379852",
+            "facultyCoordinator_email": "kairos@stpaulscollege.edu",
+            "registrationFee": 300,
+            "venue": "Room 302",
+            "minimumNoOfParticipants": 3,
+            "maximumNoOfParticipants": 4,
+            "winners": 4000,
+            "runners": 2000,
+            "description": [
+                "4 players per team",
+                "No emulators",
+                "Bring own device",
+                "No triggers",
+                "No gloves"
+            ]
+        },
+
+        {
+            "eventID": "FREE_FIRE",
+            "eventType": "GAMING",
+            "eventName": "Free Fire",
+            "img": "https://dl.dir.freefiremobile.com/common/web_event/hash/54f31449f5f91cf0cc223cc635cd5952jpg",
+            "studentCoordinator_1": "Charles",
+            "studentCoordinator_2": "Vikas",
+            "studentCoordinator_3": "Punith",
+            "studentCoordinator_1PhoneNO": "+91 8050542632",
+            "studentCoordinator_2PhoneNO": "+91 8618456612",
+            "studentCoordinator_3PhoneNO": "+91 8088285253",
+            "studentCoordinator_Email_IDA": "freefire@kairos.com",
+            "facultyCoordinator_1": "Ms. Lincy",
+            "facultyCoordinator_1PhoneNO": "+91 9738710164",
+            "facultyCoordinator_email": "kairos@stpaulscollege.edu",
+            "registrationFee": 300,
+            "venue": "Room 206",
+            "minimumNoOfParticipants": 3,
+            "maximumNoOfParticipants": 4,
+            "winners": 4000,
+            "runners": 2000,
+            "description": [
+                "4 players per team",
+                "No hacks",
+                "No unfair advantages",
+                "No grenades",
+                "Strict rules apply"
+            ]
+        },
+
+        {
+            "eventID": "COD",
+            "eventType": "GAMING",
+            "eventName": "Call of Duty",
+            "img": "https://cdn.dlcompare.com/game_tetiere/upload/gameimage/file/call-of-duty-black-ops-6-file-187711f39c.jpg.webp",
+            "studentCoordinator_1": "Karthigeyan",
+            "studentCoordinator_2": "Sudeesh",
+            "studentCoordinator_3": "Dummy",
+            "studentCoordinator_1PhoneNO": "+91 8095576370",
+            "studentCoordinator_2PhoneNO": "+91 9538726657",
+            "studentCoordinator_3PhoneNO": "+91 9000000000",
+            "studentCoordinator_Email_IDA": "cod@kairos.com",
+            "facultyCoordinator_1": "Ms. Manjula",
+            "facultyCoordinator_1PhoneNO": "+91 8095379852",
+            "facultyCoordinator_email": "kairos@stpaulscollege.edu",
+            "registrationFee": 150,
+            "venue": "Lab 2",
+            "minimumNoOfParticipants": 1,
+            "maximumNoOfParticipants": 1,
+            "winners": 1000,
+            "runners": 500,
+            "description": [
+                "Played on college system",
+                "Players responsible for damage",
+                "Free for all",
+                "5 rounds"
+            ]
+        },
+
+        {
+            "eventID": "E_FOOTBALL",
+            "eventType": "GAMING",
+            "eventName": "E-Football",
+            "img": "https://cdn.dlcompare.com/game_tetiere/upload/gameimage/file/call-of-duty-black-ops-6-file-187711f39c.jpg.webp",
+            "studentCoordinator_1": "Noufal",
+            "studentCoordinator_2": "Ashwajith",
+            "studentCoordinator_3": "Anzil",
+            "studentCoordinator_1PhoneNO": "+91 9342059498",
+            "studentCoordinator_2PhoneNO": "+91 9902669790",
+            "studentCoordinator_3PhoneNO": "+91 9037279826",
+            "studentCoordinator_Email_IDA": "efootball@kairos.com",
+            "facultyCoordinator_1": "Ms. Lincy",
+            "facultyCoordinator_1PhoneNO": "+91 9738710164",
+            "facultyCoordinator_email": "kairos@stpaulscollege.edu",
+            "registrationFee": 100,
+            "venue": "Room 112",
+            "minimumNoOfParticipants": 1,
+            "maximumNoOfParticipants": 1,
+            "winners": 1000,
+            "runners": 500,
+            "description": [
+                "Knockout 1v1",
+                "8 min match",
+                "No dream team",
+                "Assigned teams",
+                "No abuse"
+            ]
+        },
+
+        {
+            "eventID": "MINI_MILITIA",
+            "eventType": "GAMING",
+            "eventName": "Mini Militia",
+            "img": "https://wallpapercave.com/wp/wp2137727.png",
+            "studentCoordinator_1": "Albin",
+            "studentCoordinator_2": "Anu",
+            "studentCoordinator_3": "Deekshitha",
+            "studentCoordinator_1PhoneNO": "+91 6383764278",
+            "studentCoordinator_2PhoneNO": "+91 7892393819",
+            "studentCoordinator_3PhoneNO": "+91 7411349262",
+            "studentCoordinator_Email_IDA": "mini@kairos.com",
+            "facultyCoordinator_1": "Ms. Manjula",
+            "facultyCoordinator_1PhoneNO": "+91 8095379852",
+            "facultyCoordinator_email": "kairos@stpaulscollege.edu",
+            "registrationFee": 100,
+            "venue": "Room 106",
+            "minimumNoOfParticipants": 1,
+            "maximumNoOfParticipants": 2,
+            "winners": 1000,
+            "runners": 500,
+            "description": [
+                "1 player",
+                "Bring own phone",
+                "No hacks",
+                "Report early",
+                "Organizer rules apply"
+            ]
+        },
+
+        {
+            "eventID": "SOLO_SINGING",
+            "eventType": "CULTURAL",
+            "eventName": "Solo Singing",
+            "img": "https://static.spinmagazine.com/files/2025/11/leadGettyImages-2223286859.jpg",
+            "studentCoordinator_1": "Sai Chethan",
+            "studentCoordinator_2": "Veronica",
+            "studentCoordinator_3": "Melna",
+            "studentCoordinator_1PhoneNO": "+91 8088526031",
+            "studentCoordinator_2PhoneNO": "+91 9611121400",
+            "studentCoordinator_3PhoneNO": "+91 7619186371",
+            "studentCoordinator_Email_IDA": "singing@kairos.com",
+            "facultyCoordinator_1": "Ms. Lincy",
+            "facultyCoordinator_1PhoneNO": "+91 9738710164",
+            "facultyCoordinator_email": "kairos@stpaulscollege.edu",
+            "registrationFee": 150,
+            "venue": "Music Room",
+            "minimumNoOfParticipants": 1,
+            "maximumNoOfParticipants": 1,
+            "winners": 1500,
+            "runners": 750,
+            "description": [
+                "Solo performance",
+                "3-5 mins",
+                "No vulgar songs",
+                "Bring instruments",
+                "The Participants need to upload the audio in MP3 format 1 day prior"
+            ]
+        },
+
+        {
+            "eventID": "DUET_DANCE",
+            "eventType": "CULTURAL",
+            "eventName": "Duet Dance",
+            "img": "https://img.freepik.com/free-photo/couple-standing-pose-holding-hands_23-2147711684.jpg?semt=ais_hybrid&w=740&q=80",
+            "studentCoordinator_1": "Govardhan",
+            "studentCoordinator_2": "Siya",
+            "studentCoordinator_3": "Tanushree",
+            "studentCoordinator_1PhoneNO": "+91 7349015576",
+            "studentCoordinator_2PhoneNO": "+91 8431598018",
+            "studentCoordinator_3PhoneNO": "+91 8431924766",
+            "studentCoordinator_Email_IDA": "duet@kairos.com",
+            "facultyCoordinator_1": "Ms. Manjula",
+            "facultyCoordinator_1PhoneNO": "+91 8095379852",
+            "facultyCoordinator_email": "kairos@stpaulscollege.edu",
+            "registrationFee": 250,
+            "venue": "Main Auditorium",
+            "minimumNoOfParticipants": 2,
+            "maximumNoOfParticipants": 2,
+            "winners": 2500,
+            "runners": 1300,
+            "description": [
+                "Open theme",
+                "3+2 mins",
+                "No dangerous props",
+                "Judges decision final",
+                "The Participants need to upload the audio in MP3 format 1 day prior"
+            ]
+        },
+
+        {
+            "eventID": "GROUP_DANCE",
+            "eventType": "CULTURAL",
+            "eventName": "Group Dance",
+            "img": "https://img.freepik.com/free-vector/people-dancing-background_1048-7872.jpg",
+            "studentCoordinator_1": "Ajiqneya",
+            "studentCoordinator_2": "Suhas",
+            "studentCoordinator_3": "Neetu",
+            "studentCoordinator_1PhoneNO": "+91 8971853879",
+            "studentCoordinator_2PhoneNO": "+91 8147432328",
+            "studentCoordinator_3PhoneNO": "+91 9945378561",
+            "studentCoordinator_Email_IDA": "group@kairos.com",
+            "facultyCoordinator_1": "Ms. Lincy",
+            "facultyCoordinator_1PhoneNO": "+91 9738710164",
+            "facultyCoordinator_email": "kairos@stpaulscollege.edu",
+            "registrationFee": 400,
+            "venue": "Main Auditorium",
+            "minimumNoOfParticipants": 4,
+            "maximumNoOfParticipants": 12,
+            "winners": 4000,
+            "runners": 2000,
+            "description": [
+                "Open theme",
+                "3+2 mins",
+                "No harmful props",
+                "Judges decision final",
+                "The Participants need to upload the audio in MP3 format 1 day prior"
+            ]
+        },
+
+        {
+            "eventID": "FASHION_SHOW",
+            "eventType": "CULTURAL",
+            "eventName": "Fashion Show",
+            "img": "https://www.universityoffashion.com/blog/wp-content/uploads/2019/11/Louis-Vuittons-spring-2020-show.-vogue.jpg",
+            "studentCoordinator_1": "Alita",
+            "studentCoordinator_2": "Nandhana",
+            "studentCoordinator_3": "Ayman",
+            "studentCoordinator_1PhoneNO": "+91 7019527086",
+            "studentCoordinator_2PhoneNO": "+91 9632246946",
+            "studentCoordinator_3PhoneNO": "+91 9019373992",
+            "studentCoordinator_Email_IDA": "fashion@kairos.com",
+            "facultyCoordinator_1": "Ms. Manjula",
+            "facultyCoordinator_1PhoneNO": "+91 8095379852",
+            "facultyCoordinator_email": "kairos@stpaulscollege.edu",
+            "registrationFee": 600,
+            "venue": "Main Auditorium",
+            "minimumNoOfParticipants": 6,
+            "maximumNoOfParticipants": 12,
+            "winners": 6000,
+            "runners": 3000,
+            "description": [
+                "6-12 members",
+                "Open theme",
+                "6-10 mins",
+                "No inappropriate costumes",
+                "Props need approval",
+                "The Participants need to upload the audio in MP3 format 1 day prior"
+            ]
+        }
+    ]
+];
+
+module.exports = events;
