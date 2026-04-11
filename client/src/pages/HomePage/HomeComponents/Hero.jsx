@@ -63,7 +63,7 @@ const Hero = () => {
     <Button href="#account-form" white>
       Register
     </Button>
-    <Button href="https://drive.google.com/file/d/122PF-DtRBr9cq4gvlhEQoHOCbhWGnjmk/view?usp=sharing" white>
+    <Button href="https://drive.google.com/file/d/1hHaEUxNbJmcmvlib2uIkJAoEeYYwpuJN/view?usp=sharing" white>
       Brochure
     </Button>
   </div>

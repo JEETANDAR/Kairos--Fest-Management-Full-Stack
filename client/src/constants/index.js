@@ -65,7 +65,7 @@ export const navigation = [
   {
     id: "3",
     title: "Brouchere",
-    url: "https://drive.google.com/file/d/122PF-DtRBr9cq4gvlhEQoHOCbhWGnjmk/view?usp=sharing",
+    url: "https://drive.google.com/file/d/1hHaEUxNbJmcmvlib2uIkJAoEeYYwpuJN/view?usp=sharing",
   },
 
   {

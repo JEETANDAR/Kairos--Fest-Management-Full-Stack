@@ -4,17 +4,18 @@ require("dotenv").config();
 
 const { DateTime } = require("luxon");
 
-const { bulkUserCheckIn, addUser } = require("../../Data_Model/user.data");
+const { bulkUserCheckIn } = require("../../Data_Model/user.data");
 const {
   generateOrderNo,
   addOrdersDetails,
 } = require("../../Data_Model/Payment/payment.data");
 const { getAmountAndMinimumNoOfParticipants } = require("../../Data_Model/events.data");
 const { checkUserSessionInfo } = require("../../utils/userSessionRetrevial");
-const { addRegistredTeams } = require("../../Data_Model/Payment/registration.data");
 const OrdersSchema = require("../../schema/Payment/oders.schema");
 
 const { Razorpay_key, Razorpay_secret } = require("../../utils/environmentalVariables");
+
+const OFFER_DEADLINE = new Date("2026-04-24T23:59:59");
 
 // Razorpay init
 const razorpay = new Razorpay({
@@ -40,7 +41,7 @@ async function generateOrder(paymentMethod, totalAmount, emailIdAndKey, particip
 
     await addOrdersDetails({
       orderNo,
-      orderID: razorpayOrder.id, // IMPORTANT
+      orderID: razorpayOrder.id,
       amount: totalAmount,
       paymentMethod,
     });
@@ -65,49 +66,85 @@ async function generateOrderDetails(req, res) {
     if (!user) {
       return res.status(401).json({ message: "User not logged in" });
     }
-const { paymentMethod, eventsValues, isContingentSelection } = req.body;
 
-if (!eventsValues || typeof eventsValues !== "object") {
-  return res.status(400).json({ message: "Invalid event data" });
-}
+    // ⭐ Accept finalAmount from frontend (offer-applied price)
+    const { paymentMethod, eventsValues, isContingentSelection, finalAmount } = req.body;
 
+    if (!eventsValues || typeof eventsValues !== "object") {
+      return res.status(400).json({ message: "Invalid event data" });
+    }
 
-    let totalAmount = 0;
     let flattenEmails = {};
-    let allEmails = [];
+    let allEmails = [];           // plain email strings for OrderNo schema
+    let allParticipants = [];     // full objects { email, name, phone, college } for upsert
+    let rawTotal = 0;
 
-   for (const event of Object.keys(eventsValues)) {
+    for (const event of Object.keys(eventsValues)) {
       const { amt, maximumNoOfParticipants } = await getAmountAndMinimumNoOfParticipants(event);
       const teamsForEvent = Object.values(eventsValues[event]);
 
-      // --- DEBUGGING LOGS ---
       console.log(`\n=== CHECKING EVENT: ${event} ===`);
       console.log(`Max allowed from DB:`, maximumNoOfParticipants);
-      
+
       for (let i = 0; i < teamsForEvent.length; i++) {
         const team = teamsForEvent[i];
         console.log(`Team ${i + 1} size:`, team.length);
-        
+
         if (team.length > maximumNoOfParticipants) {
-          console.log(`❌ CRASHING HERE: Team size (${team.length}) is greater than DB max (${maximumNoOfParticipants})`);
+          console.log(`❌ Team size (${team.length}) > DB max (${maximumNoOfParticipants})`);
           return res.status(400).json({ message: "Max participants exceeded" });
         }
       }
-      // ----------------------
 
-      const participants = teamsForEvent
-        .flat()
-        .map(p => p.email.toLowerCase());
+      // Flatten all participants across teams for this event
+      const participantsForEvent = teamsForEvent.flat();
 
-      totalAmount += (amt * teamsForEvent.length);
-      
-      flattenEmails[event] = participants;
-      allEmails.push(...participants);
+      // Extract plain emails for the OrderNo schema
+      const emailsForEvent = participantsForEvent.map((p) => {
+        // Support both { email } and { emailID } shapes from the frontend
+        return (p.email || p.emailID || '').toLowerCase();
+      });
 
-      await bulkUserCheckIn(participants);
+      rawTotal += amt * teamsForEvent.length;
+
+      flattenEmails[event] = emailsForEvent;
+      allEmails.push(...emailsForEvent);
+
+      // Collect full participant objects so we can upsert name/phone/college
+      participantsForEvent.forEach(p => {
+        allParticipants.push({
+          email: (p.email || p.emailID || '').toLowerCase(),
+          name: p.name || '',
+          phone: p.phone || p.phoneNo || '',
+          college: p.college || p.collegeName || '',
+        });
+      });
     }
 
-    if (isContingentSelection) totalAmount = 2600;
+    // ✅ Upsert all participants into userdatas WITH their name/phone/college
+    await bulkUserCheckIn(allParticipants);
+
+    // ─── AMOUNT RESOLUTION ────────────────────────────────────────────────────
+    let totalAmount;
+    const now = new Date();
+    const offerActive = now <= OFFER_DEADLINE;
+
+    if (offerActive && typeof finalAmount === "number" && finalAmount > 0) {
+      if (finalAmount > rawTotal) {
+        console.warn(
+          `⚠️  Frontend finalAmount (${finalAmount}) > rawTotal (${rawTotal}). Falling back to rawTotal.`
+        );
+        totalAmount = rawTotal;
+      } else {
+        totalAmount = finalAmount;
+      }
+    } else if (offerActive && isContingentSelection) {
+      totalAmount = 2600;
+    } else {
+      totalAmount = rawTotal;
+    }
+
+    console.log(`\n💰 Charging: ₹${totalAmount} (raw would be ₹${rawTotal})`);
 
     const order = await generateOrder(
       paymentMethod,

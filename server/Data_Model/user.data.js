@@ -72,9 +72,7 @@ async function addUser(userInfo) {
                 userID: counter.userCount,
             });
             await newUser.save();
-
         }
-
 
         console.log("User added successfully:", newUser);
 
@@ -97,12 +95,12 @@ async function updateUserInfo(currentUser, updatedInfo) {
     }
 }
 
-// get the accoutns role
+// get the accounts role
 async function userRole(email) {
-    return await UserData.findOne({ emailID: email }).lean().select({ _id: 0, userRole: 1 })
+    return await UserData.findOne({ emailID: email }).lean().select({ _id: 0, userRole: 1 });
 }
 
-// useed for registration in an event
+// used for registration in an event
 async function searchForRegisteredEvents(emailID) {
     try {
         return await UserData.findOne({ emailID }).lean().select({ events: 1, _id: 0 });
@@ -140,17 +138,86 @@ async function addParticipants(participants, key) {
     }
 }
 
-// check if all the emails are there takes an array and return the found ones
-async function bulkUserCheckIn(emails) {
+/**
+ * bulkUserCheckIn
+ * 
+ * NOW accepts either:
+ *   - An array of email strings: ["a@b.com", "c@d.com"]
+ *   - An array of participant objects: [{ email: "a@b.com", name: "Arjun", phone: "99..." }, ...]
+ * 
+ * If objects are passed, it will upsert name/phone/college into userdatas
+ * so they appear correctly in the participants API later.
+ */
+async function bulkUserCheckIn(emailsOrParticipants) {
     try {
-        return await UserData.find({ emailID: { $in: emails } }).lean().select({ emailID: 1, _id: 0 });
+        // Detect if we received plain email strings or participant objects
+        const isObjectArray =
+            emailsOrParticipants.length > 0 &&
+            typeof emailsOrParticipants[0] === 'object';
+
+        if (isObjectArray) {
+            // Upsert each participant — save name/phone/college if not already set
+            const ops = emailsOrParticipants.map(p => {
+                const email = (p.email || p.emailID || '').toLowerCase();
+                return {
+                    updateOne: {
+                        filter: { emailID: email },
+                        update: {
+                            $setOnInsert: {
+                                emailID: email,
+                                name: p.name || '',
+                                phoneNo: p.phone || p.phoneNo || '',
+                                collegeName: p.college || p.collegeName || '',
+                            },
+                            // Only fill in name/phone/college if they're currently empty
+                            $set: {},
+                        },
+                        upsert: true,
+                    },
+                };
+            });
+
+            // Run a smarter upsert: set name/phone/college only if the field is blank
+            for (const p of emailsOrParticipants) {
+                const email = (p.email || p.emailID || '').toLowerCase();
+                if (!email) continue;
+
+                const existing = await UserData.findOne({ emailID: email });
+                if (!existing) {
+                    // Brand new user — create with all details
+                    await UserData.create({
+                        emailID: email,
+                        name: p.name || '',
+                        phoneNo: p.phone || p.phoneNo || '',
+                        collegeName: p.college || p.collegeName || '',
+                    });
+                } else {
+                    // Existing user — only fill in missing fields
+                    const updates = {};
+                    if (!existing.name && p.name) updates.name = p.name;
+                    if (!existing.phoneNo && (p.phone || p.phoneNo)) updates.phoneNo = p.phone || p.phoneNo;
+                    if (!existing.collegeName && (p.college || p.collegeName)) updates.collegeName = p.college || p.collegeName;
+
+                    if (Object.keys(updates).length > 0) {
+                        await UserData.updateOne({ emailID: email }, { $set: updates });
+                    }
+                }
+            }
+
+            const emails = emailsOrParticipants.map(p => (p.email || p.emailID || '').toLowerCase());
+            return await UserData.find({ emailID: { $in: emails } }).lean().select({ emailID: 1, _id: 0 });
+        } else {
+            // Plain email strings — original behaviour
+            const emails = emailsOrParticipants.map(e => e.toLowerCase());
+            return await UserData.find({ emailID: { $in: emails } }).lean().select({ emailID: 1, _id: 0 });
+        }
     } catch (err) {
         console.error("Error in bulkUserCheckIn:", err);
         return [];
     }
 }
 
-// add dds the orders number to all the emails in one go
+// adds the order number to all the emails in one go
 async function addOrderNoToUsersArray(orderNo, emails) {
     try {
         return await UserData.updateMany(
@@ -175,25 +242,25 @@ async function UserDetails(ID) {
     }
 }
 
-// functin to get all the user registered events
+// function to get all the user registered events
 async function getRegisteredEvents(email) {
     try {
         return await UserData.findOne({ emailID: email })
             .lean()
-            .select({ _id: 0, __v: 0, events: 1 })
+            .select({ _id: 0, __v: 0, events: 1 });
     } catch (err) {
-        console.error("Error to get registed Events: ", err);
+        console.error("Error to get registered Events: ", err);
         return null;
     }
 }
 
-// checks if the user exist
+// checks if the user exists
 async function userExists(email) {
     return UserData.findOne({ emailID: email });
 }
 
 async function getUserInfoWithEvents(email) {
-    return UserData.findOne({emailID: email})
+    return UserData.findOne({ emailID: email });
 }
 
 module.exports = {
@@ -208,4 +275,5 @@ module.exports = {
     UserDetails,
     getRegisteredEvents,
     userExists,
+    getUserInfoWithEvents,
 };

@@ -1,12 +1,12 @@
-const { addAllEvents } = require("../Data_Model/events.data");
-const { addInHouseUsers } = require("../Data_Model/user/inHouseControler.data");
+// const { addAllEvents } = require("../Data_Model/events.data");
+// const { addInHouseUsers } = require("../Data_Model/user/inHouseControler.data");
 const { connectDB } = require("../utils/mongoDB");
 const mongoose = require("mongoose");
 require("dotenv").config();
 
 let eventsIDs;
 
-// Events Data (KEEP YOUR SAME DATA HERE)
+// Events Data
 const events = [/* 👉 KEEP YOUR FULL EVENTS ARRAY SAME */];
 
 eventsIDs = events.map((event) => event.eventID.toUpperCase());
@@ -17,47 +17,12 @@ async function startAllProcesses() {
 
   await connectDB();
 
-  const coordinatorEmails = events.map((event) => ({
-    name: event.studentCoordinator_1,
-    emailID: event.studentCoordinator_Email_IDA,
-    eventID: event.eventID.toUpperCase(),
-  }));
+  // ✅ SKIP ALL SEEDING — never auto-insert or re-insert data.
+  // Whatever you delete or update in MongoDB Atlas will STAY deleted/updated.
+  // If you ever need to seed data manually, do it via a one-off script, NOT here.
 
-  const users = [
-    { emailID: "diagoarden@gmail.com", userRole: "admin" },
-    ...coordinatorEmails,
-  ];
-
-  try {
-    // ✅ CHECK EVENTS COLLECTION
-    const eventCount = await mongoose.connection.db
-      .collection("events")
-      .countDocuments();
-
-    // if (eventCount === 0) {
-    //   await addAllEvents(events, eventsIDs);
-    //   console.log("✅ Events inserted");
-    // } else {
-    //   console.log("⚡ Events already exist, skipping insert");
-    // }
-
-    // ✅ CHECK USERS COLLECTION
-    const userCount = await mongoose.connection.db
-      .collection("users")
-      .countDocuments();
-
-    // if (userCount === 0) {
-    //   await addInHouseUsers(users);
-    //   console.log("✅ Users inserted");
-    // } else {
-    //   console.log("⚡ Users already exist, skipping insert");
-    // }
-
-    console.log("🎉 All processes completed successfully.");
-  } catch (error) {
-    console.error("❌ Error in startAllProcesses:", error);
-  }
+  console.log("🎉 DB connected. No auto-seeding. Your MongoDB data is safe.");
 }
 
-// ✅ EXPORT (VERY IMPORTANT)
-module.exports = { startAllProcesses, eventsIDs };  
+// ✅ EXPORT
+module.exports = { startAllProcesses, eventsIDs };
