@@ -117,14 +117,26 @@ async function syncEventsWithDB() {
 
         console.log(`📊 Events sync check → DB: ${dbCount} | Seed file: ${seedEvents.length}`);
 
-        // ── 3. Compare counts ────────────────────────────────────────
+        // ── 3. Check if counts match AND data is intact ──────────────
         if (dbCount === seedEvents.length) {
-            console.log("✅ Events collection is already in sync — no action needed.");
-            return;
+            // Verify data integrity — check if any event is missing key fields
+            const broken = await Event.countDocuments({
+                $or: [
+                    { descripton: { $exists: false } },
+                    { descripton: { $size: 0 } }
+                ]
+            });
+
+            if (broken === 0) {
+                console.log("✅ Events collection is already in sync — no action needed.");
+                return;
+            }
+
+            console.log(`⚠️  Found ${broken} events with missing/empty descripton — forcing re-seed.`);
         }
 
         // ── 4. Out of sync → clear and re-seed ──────────────────────
-        console.log("🔄 Events count mismatch — resyncing database...");
+        console.log("🔄 Resyncing events database...");
 
         await Event.deleteMany({});
         console.log("🗑️  Cleared existing events from the collection.");
