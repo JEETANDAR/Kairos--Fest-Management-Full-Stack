@@ -7,7 +7,7 @@ require("dotenv").config();
 const events = require('../../events.data');
 
 const eventsIDs = Array.isArray(events)
-    ? events.map((event) => event.eventID.toUpperCase())
+    ? events.filter((event) => event.eventID).map((event) => event.eventID.toUpperCase())
     : [];
 
 // 🚀 MAIN FUNCTION
