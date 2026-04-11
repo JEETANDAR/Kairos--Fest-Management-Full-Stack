@@ -31,7 +31,7 @@ const events = [
             "maximumNoOfParticipants": 2,
             "winners": 2500,
             "runners": 1300,
-            "description": [
+            "descripton": [
                 "Maximum 2 members per team",
                 "3 rounds: Aptitude, Pictogram, Buzzer",
                 "Instructions on spot",
@@ -61,7 +61,7 @@ const events = [
             "maximumNoOfParticipants": 2,
             "winners": 2500,
             "runners": 1300,
-            "description": [
+            "descripton": [
                 "2 participants per team",
                 "Bring your own systems",
                 "Build website using AI",
@@ -91,7 +91,7 @@ const events = [
             "maximumNoOfParticipants": 2,
             "winners": 2000,
             "runners": 1000,
-            "description": [
+            "descripton": [
                 "Teams of 1-2",
                 "No internet usage",
                 "No discussion between teams",
@@ -121,7 +121,7 @@ const events = [
             "maximumNoOfParticipants": 8,
             "winners": 4000,
             "runners": 2000,
-            "description": [
+            "descripton": [
                 "Max 8 members",
                 "Only one phone per team",
                 "Follow instructions",
@@ -151,7 +151,7 @@ const events = [
             "maximumNoOfParticipants": 1,
             "winners": 1500,
             "runners": 750,
-            "description": [
+            "descripton": [
                 "3 rounds: Aptitude, GD, Stress",
                 "Topics on spot",
                 "No malpractice",
@@ -180,7 +180,7 @@ const events = [
             "maximumNoOfParticipants": 4,
             "winners": 4000,
             "runners": 2000,
-            "description": [
+            "descripton": [
                 "4 players per team",
                 "No emulators",
                 "Bring own device",
@@ -210,7 +210,7 @@ const events = [
             "maximumNoOfParticipants": 4,
             "winners": 4000,
             "runners": 2000,
-            "description": [
+            "descripton": [
                 "4 players per team",
                 "No hacks",
                 "No unfair advantages",
@@ -240,7 +240,7 @@ const events = [
             "maximumNoOfParticipants": 1,
             "winners": 1000,
             "runners": 500,
-            "description": [
+            "descripton": [
                 "Played on college system",
                 "Players responsible for damage",
                 "Free for all",
@@ -269,7 +269,7 @@ const events = [
             "maximumNoOfParticipants": 1,
             "winners": 1000,
             "runners": 500,
-            "description": [
+            "descripton": [
                 "Knockout 1v1",
                 "8 min match",
                 "No dream team",
@@ -299,7 +299,7 @@ const events = [
             "maximumNoOfParticipants": 2,
             "winners": 1000,
             "runners": 500,
-            "description": [
+            "descripton": [
                 "1 player",
                 "Bring own phone",
                 "No hacks",
@@ -329,7 +329,7 @@ const events = [
             "maximumNoOfParticipants": 1,
             "winners": 1500,
             "runners": 750,
-            "description": [
+            "descripton": [
                 "Solo performance",
                 "3-5 mins",
                 "No vulgar songs",
@@ -359,7 +359,7 @@ const events = [
             "maximumNoOfParticipants": 2,
             "winners": 2500,
             "runners": 1300,
-            "description": [
+            "descripton": [
                 "Open theme",
                 "3+2 mins",
                 "No dangerous props",
@@ -389,7 +389,7 @@ const events = [
             "maximumNoOfParticipants": 12,
             "winners": 4000,
             "runners": 2000,
-            "description": [
+            "descripton": [
                 "Open theme",
                 "3+2 mins",
                 "No harmful props",
@@ -419,7 +419,7 @@ const events = [
             "maximumNoOfParticipants": 12,
             "winners": 6000,
             "runners": 3000,
-            "description": [
+            "descripton": [
                 "6-12 members",
                 "Open theme",
                 "6-10 mins",
