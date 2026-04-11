@@ -10,7 +10,6 @@
  */
 
 const events = [
-    [
         {
             "eventID": "IT_QUIZ",
             "eventType": "TECHNICAL",
@@ -429,7 +428,6 @@ const events = [
                 "The Participants need to upload the audio in MP3 format 1 day prior"
             ]
         }
-    ]
 ];
 
 module.exports = events;
