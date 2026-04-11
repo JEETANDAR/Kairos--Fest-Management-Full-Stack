@@ -1,5 +1,5 @@
-const { addAllEvents } = require("../Data_Model/events.data");
-const { addInHouseUsers } = require("../Data_Model/user/inHouseControler.data");
+// const { addAllEvents } = require("../Data_Model/events.data");
+// const { addInHouseUsers } = require("../Data_Model/user/inHouseControler.data");
 const { connectDB } = require("../utils/mongoDB");
 const mongoose = require("mongoose");
 require("dotenv").config();
