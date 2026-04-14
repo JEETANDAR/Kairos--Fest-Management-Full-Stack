@@ -92,9 +92,67 @@ async function getAmountAndMinimumNoOfParticipants(eventID) {
     }
 }
 
+/**
+ * SYNC EVENTS WITH DATABASE 🔄
+ * 
+ * 1. Loads the seed data from the root events.data.js file
+ * 2. Counts the documents currently in the Event collection
+ * 3. If the count matches the seed data length → skip (already in sync)
+ * 4. If the count differs → clear the collection and re-insert all events
+ *
+ * Call this once during server startup (e.g. inside startAllProcesses)
+ */
+async function syncEventsWithDB() {
+    try {
+        // ── 1. Load seed data from root ──────────────────────────────
+        const seedEvents = require('../../events.data');
+
+        if (!Array.isArray(seedEvents) || seedEvents.length === 0) {
+            console.warn("⚠️  events.data.js is empty or not an array — skipping sync.");
+            return;
+        }
+
+        // ── 2. Count existing documents in the Event collection ──────
+        const dbCount = await Event.countDocuments();
+
+        console.log(`📊 Events sync check → DB: ${dbCount} | Seed file: ${seedEvents.length}`);
+
+        // ── 3. Check if counts match AND data is intact ──────────────
+        if (dbCount === seedEvents.length) {
+            // Verify data integrity — check if any event is missing key fields
+            const broken = await Event.countDocuments({
+                $or: [
+                    { descripton: { $exists: false } },
+                    { descripton: { $size: 0 } }
+                ]
+            });
+
+            if (broken === 0) {
+                console.log("✅ Events collection is already in sync — no action needed.");
+                return;
+            }
+
+            console.log(`⚠️  Found ${broken} events with missing/empty descripton — forcing re-seed.`);
+        }
+
+        // ── 4. Out of sync → clear and re-seed ──────────────────────
+        console.log("🔄 Resyncing events database...");
+
+        await Event.deleteMany({});
+        console.log("🗑️  Cleared existing events from the collection.");
+
+        await Event.insertMany(seedEvents, { ordered: false });
+        console.log(`✅ Successfully inserted ${seedEvents.length} events into the database.`);
+
+    } catch (error) {
+        console.error("❌ Error syncing events with DB:", error);
+    }
+}
+
 module.exports = {
     getEventsData,
     getAmountAndMinimumNoOfParticipants,
     getEventsDataByID,
     addAllEvents,
+    syncEventsWithDB,
 };

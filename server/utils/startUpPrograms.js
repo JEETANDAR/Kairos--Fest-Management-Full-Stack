@@ -1,15 +1,14 @@
-// const { addAllEvents } = require("../Data_Model/events.data");
-// const { addInHouseUsers } = require("../Data_Model/user/inHouseControler.data");
+const { syncEventsWithDB } = require("../Data_Model/events.data");
 const { connectDB } = require("../utils/mongoDB");
 const mongoose = require("mongoose");
 require("dotenv").config();
 
-let eventsIDs;
+// Events data loaded from root seed file
+const events = require('../../events.data');
 
-// Events Data
-const events = [/* 👉 KEEP YOUR FULL EVENTS ARRAY SAME */];
-
-eventsIDs = events.map((event) => event.eventID.toUpperCase());
+const eventsIDs = Array.isArray(events)
+    ? events.filter((event) => event.eventID).map((event) => event.eventID.toUpperCase())
+    : [];
 
 // 🚀 MAIN FUNCTION
 async function startAllProcesses() {
@@ -17,11 +16,10 @@ async function startAllProcesses() {
 
   await connectDB();
 
-  // ✅ SKIP ALL SEEDING — never auto-insert or re-insert data.
-  // Whatever you delete or update in MongoDB Atlas will STAY deleted/updated.
-  // If you ever need to seed data manually, do it via a one-off script, NOT here.
+  // ✅ Sync events: compares seed file count vs DB count, re-seeds if different
+  await syncEventsWithDB();
 
-  console.log("🎉 DB connected. No auto-seeding. Your MongoDB data is safe.");
+  console.log("🎉 DB connected. Events synced.");
 }
 
 // ✅ EXPORT
