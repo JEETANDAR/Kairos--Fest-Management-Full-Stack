@@ -10,6 +10,7 @@ interface EventRegistrationProps {
 }
 
 const OFFER_DEADLINE = new Date("2026-04-24T23:59:59");
+const RAZORPAY_PAYMENT_LINK = "https://rzp.io/rzp/kairos-26";
 
 const getAllEvents = (eventCategories: { [key: string]: Event[] }): Event[] => {
   return Object.values(eventCategories).flat();
@@ -53,6 +54,9 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
   const [userAddedToEvent, setUserAddedToEvent] = useState<Record<string, boolean>>({});
   const [isContingent, setIsContingent] = useState(false);
 
+  // ─── NEW: tracks whether user has opened the payment link ───────────────────
+  const [paymentLinkOpened, setPaymentLinkOpened] = useState(false);
+
   useEffect(() => {
     const getData = async () => {
       try {
@@ -92,10 +96,6 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
     return teamCount * (event?.registrationFee || 0);
   };
 
-  /**
-   * Returns { total, appliedOffers } so we can show the user what discounts
-   * were applied AND pass the final amount to the backend.
-   */
   const calculateTotalAmountWithDetails = (): {
     total: number;
     isContingentOffer: boolean;
@@ -107,7 +107,6 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
     const now = new Date();
     const offerActive = now <= OFFER_DEADLINE;
 
-    // After deadline → full price, no offers
     if (!offerActive) {
       return {
         total: selectedEvents.reduce(
@@ -122,7 +121,6 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
       };
     }
 
-    // Contingent offer (all events selected via button)
     if (isContingent) {
       return {
         total: 2600,
@@ -134,7 +132,6 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
       };
     }
 
-    // Category-level offers
     const isAllTechnical = checkFullCategorySelected("Technical");
     const isAllGaming = checkFullCategorySelected("Gaming");
     const isAllCultural = checkFullCategorySelected("Cultural");
@@ -178,7 +175,6 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
     };
   };
 
-  // Convenience wrapper used in JSX
   const calculateTotalAmount = () => calculateTotalAmountWithDetails().total;
 
   // ─── EVENT SELECTION ────────────────────────────────────────────────────────
@@ -434,21 +430,29 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
 
   // ─── PAYMENT ─────────────────────────────────────────────────────────────────
 
+  /**
+   * Handles payment method selection.
+   *
+   * - Cash ("Pay at Desk"): same as before — calls proceedToPay, saves data,
+   *   redirects to /success.
+   *
+   * - Online: creates the order via proceedToPay (so your backend records it),
+   *   then opens the Razorpay payment link in a new tab. The user pays there
+   *   and clicks "I've Completed Payment" to confirm, which saves the
+   *   registration data and redirects to /success.
+   */
   const handlePaymentSelection = async (isCashPayment = false) => {
     try {
-      // Calculate the correct discounted amount on the frontend
       const { total: finalAmount } = calculateTotalAmountWithDetails();
 
       if (isCashPayment) {
-        // Pass finalAmount so backend doesn't recalculate
         await proceedToPay(participants, true, isContingent, finalAmount);
         setPaymentMethod("Pay at Desk");
         saveRegistrationData("Pay at Desk");
         window.location.href = "/success";
       } else {
         setIsLoadingOrder(true);
-        // ⭐ Key fix: pass finalAmount to proceedToPay so backend uses our
-        //    offer-applied amount instead of recalculating from raw DB prices.
+        // Create the order in your backend so it's recorded
         const order = await proceedToPay(participants, false, isContingent, finalAmount);
         setOrderData({
           orderNo: order.orderNo,
@@ -464,68 +468,22 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
     }
   };
 
-  const handleProceedToPayment = () => {
-    if (!orderData) return alert("Order not created");
+  /**
+   * Opens the Razorpay payment link in a new tab.
+   * Sets paymentLinkOpened so we show the confirmation button.
+   */
+  const handleOpenPaymentLink = () => {
+    window.open(RAZORPAY_PAYMENT_LINK, "_blank");
+    setPaymentLinkOpened(true);
+  };
 
-    console.log("Opening Razorpay with:", orderData);
-
-    const options = {
-      key: import.meta.env.VITE_RAZORPAY_KEY,
-      amount: orderData.amount * 100,
-      currency: "INR",
-      name: "Kairos 2026",
-      description: "Event Registration",
-      order_id: orderData.razorpayOrderId,
-
-      method: {
-        upi: true,
-        card: true,
-        netbanking: true,
-        wallet: true,
-        paylater: true,
-      },
-
-      handler: async (response: any) => {
-        try {
-          const verifyRes = await fetch(
-            `${import.meta.env.VITE_API_BASE_URL || "http://localhost:9000"}/payment/verifyOrder`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                razorpay_payment_id: response.razorpay_payment_id,
-                razorpay_order_id: response.razorpay_order_id,
-                razorpay_signature: response.razorpay_signature,
-              }),
-            }
-          );
-
-          const data = await verifyRes.json();
-
-          if (verifyRes.ok) {
-            console.log("Payment verified:", data);
-            window.location.href = "/success";
-          } else {
-            console.error("Verification failed:", data);
-            alert(data.status || "Payment verification failed");
-          }
-        } catch (err) {
-          console.error("Verification API error:", err);
-          alert("Server error during payment verification");
-        }
-      },
-
-      prefill: {
-        name: userProfile.name,
-        email: userProfile.email,
-        contact: userProfile.phone,
-      },
-
-      theme: { color: "#7C3AED" },
-    };
-
-    const rzp = new (window as any).Razorpay(options);
-    rzp.open();
+  /**
+   * Called when the user confirms they've completed payment.
+   * Saves registration data and redirects to /success.
+   */
+  const handlePaymentConfirmed = () => {
+    saveRegistrationData("Online");
+    window.location.href = "/success";
   };
 
   // ─── HELPERS ─────────────────────────────────────────────────────────────────
@@ -569,7 +527,7 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
     return email;
   };
 
-  // ─── OFFER LABEL (shown in UI) ───────────────────────────────────────────────
+  // ─── OFFER LABEL ─────────────────────────────────────────────────────────────
 
   const getOfferLabel = () => {
     const now = new Date();
@@ -794,16 +752,19 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
           </div>
         </div>
 
-        {/* Payment Modal */}
+        {/* ─── PAYMENT MODAL ──────────────────────────────────────────────────── */}
         {showPaymentOptions && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
             <div className="bg-gray-800 rounded-lg p-6 w-full max-w-md">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-xl font-bold text-center flex-1">
                   Choose Payment Method
                 </h2>
                 <button
-                  onClick={() => setShowPaymentOptions(false)}
+                  onClick={() => {
+                    setShowPaymentOptions(false);
+                    setPaymentLinkOpened(false);
+                  }}
                   className="text-white hover:text-purple-400 transition-colors"
                 >
                   <svg
@@ -825,6 +786,7 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
 
               <div className="space-y-4">
                 {isLoadingOrder ? (
+                  /* ── Loading spinner while creating backend order ── */
                   <div className="text-center py-8">
                     <svg
                       className="animate-spin h-8 w-8 text-purple-500 mx-auto mb-4"
@@ -846,16 +808,19 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                       />
                     </svg>
-                    <p>Generating your order ID...</p>
+                    <p>Creating your order...</p>
                   </div>
                 ) : orderData && paymentMethod === "Online" ? (
+                  /* ── Order created → show payment link flow ── */
                   <div className="space-y-4">
-                    <p className="text-center text-sm text-gray-300">
-                      Your discounted amount has been applied. Proceed to pay below.
-                    </p>
+                    {/* Offer label */}
                     {offerLabel && (
-                      <p className="text-center text-sm text-green-400">✓ {offerLabel}</p>
+                      <p className="text-center text-sm text-green-400">
+                        ✓ {offerLabel}
+                      </p>
                     )}
+
+                    {/* Order details */}
                     <div className="flex justify-between items-center bg-gray-700 p-3 rounded">
                       <span className="font-medium">Order Number:</span>
                       <div className="flex items-center gap-2">
@@ -881,10 +846,10 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
                         </button>
                       </div>
                     </div>
+
                     <div className="flex justify-between items-center bg-gray-700 p-3 rounded">
                       <span className="font-medium">Total Amount:</span>
                       <div className="flex items-center gap-2">
-                        {/* ⭐ This now shows the offer-applied amount from backend */}
                         <span className="text-purple-400 font-bold">
                           ₹{orderData.amount}
                         </span>
@@ -909,17 +874,67 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
                         </button>
                       </div>
                     </div>
-                    <button
-                      onClick={handleProceedToPayment}
-                      className="w-full bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
-                    >
-                      Proceed to Payment
-                    </button>
-                    <p className="text-center text-sm text-gray-300">
-                      Please take a screenshot of the payment for future reference
-                    </p>
+
+                    {/* Step 1 — Open payment link */}
+                    {!paymentLinkOpened ? (
+                      <>
+                        <button
+                          onClick={handleOpenPaymentLink}
+                          className="w-full bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
+                        >
+                          {/* External link icon */}
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-5 w-5"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                            />
+                          </svg>
+                          Pay Now (₹{orderData.amount})
+                        </button>
+                        <p className="text-center text-xs text-gray-400">
+                          You'll be taken to the Razorpay secure payment page in a new tab.
+                        </p>
+                      </>
+                    ) : (
+                      /* Step 2 — User has opened the link; show confirmation */
+                      <div className="space-y-3">
+                        <div className="bg-yellow-900 border border-yellow-600 text-yellow-200 p-3 rounded text-sm text-center">
+                          Complete the payment of <strong>₹{orderData.amount}</strong> in
+                          the tab that just opened, then click the button below.
+                        </div>
+
+                        {/* Re-open link in case they closed it */}
+                        <button
+                          onClick={handleOpenPaymentLink}
+                          className="w-full bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-500 transition-colors text-sm"
+                        >
+                          Re-open Payment Page
+                        </button>
+
+                        {/* Confirmation button → saves data + redirect */}
+                        <button
+                          onClick={handlePaymentConfirmed}
+                          className="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold"
+                        >
+                          ✓ I've Completed the Payment
+                        </button>
+
+                        <p className="text-center text-xs text-gray-400">
+                          Please take a screenshot of the payment confirmation for your records.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 ) : (
+                  /* ── Initial choice: Online or Cash ── */
                   <>
                     <button
                       onClick={() => handlePaymentSelection(false)}
@@ -935,8 +950,12 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
                     </button>
                   </>
                 )}
+
                 <button
-                  onClick={() => setShowPaymentOptions(false)}
+                  onClick={() => {
+                    setShowPaymentOptions(false);
+                    setPaymentLinkOpened(false);
+                  }}
                   className="w-full bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors"
                 >
                   Cancel
