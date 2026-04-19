@@ -4,6 +4,9 @@ import { getEventCategory } from "../../../server/events.server";
 import { updateUserInformation } from "../../../server/userInfo";
 import { proceedToPay } from "../../../server/payments";
 
+// ✅ Import the new confirm function (add this to your payments.server.ts — see confirmOnlinePayment.server.ts)
+import { confirmOnlinePayment } from "../../../server/payments";
+
 interface EventRegistrationProps {
   userProfile: Profile;
   onUpdateProfile: (updatedProfile: Partial<Profile>) => void;
@@ -53,9 +56,15 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
   });
   const [userAddedToEvent, setUserAddedToEvent] = useState<Record<string, boolean>>({});
   const [isContingent, setIsContingent] = useState(false);
-
-  // ─── NEW: tracks whether user has opened the payment link ───────────────────
   const [paymentLinkOpened, setPaymentLinkOpened] = useState(false);
+
+  // ✅ NEW: track participants + events for the confirm-email call
+  const [allParticipantsForEmail, setAllParticipantsForEmail] = useState<
+    { name: string; email: string; phone: string; college: string }[]
+  >([]);
+  const [flattenEmailsForEmail, setFlattenEmailsForEmail] = useState<
+    Record<string, string[]>
+  >({});
 
   useEffect(() => {
     const getData = async () => {
@@ -65,7 +74,6 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
           getEventCategory("gaming"),
           getEventCategory("cultural"),
         ]);
-
         setEventCategories({
           Technical: technical || [],
           Cultural: cultural || [],
@@ -75,7 +83,6 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
         console.error("Error fetching event categories:", error);
       }
     };
-
     getData();
   }, []);
 
@@ -109,10 +116,7 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
 
     if (!offerActive) {
       return {
-        total: selectedEvents.reduce(
-          (sum, eventId) => sum + calculateEventTotal(eventId),
-          0
-        ),
+        total: selectedEvents.reduce((sum, eventId) => sum + calculateEventTotal(eventId), 0),
         isContingentOffer: false,
         isTechnicalOffer: false,
         isGamingOffer: false,
@@ -185,7 +189,6 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
         ? prevIds.filter((id) => id !== eventId)
         : [...prevIds, eventId]
     );
-
     setSelectedEventsWithAmt((prevEvents) =>
       prevEvents.some((event) => event.eventId === eventId)
         ? prevEvents.filter((event) => event.eventId !== eventId)
@@ -305,7 +308,6 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
       alert("Maximum participant limit reached for this team.");
       return;
     }
-
     setParticipants((prev) => ({
       ...prev,
       [eventId]: {
@@ -353,7 +355,6 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
       updated[eventId] = updated[eventId]?.filter((team) => team !== teamId) || [];
       return updated;
     });
-
     setParticipants((prev) => {
       const updated = { ...prev };
       if (updated[eventId]?.[teamId]) {
@@ -367,7 +368,6 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
       }
       return updated;
     });
-
     setEditMode((prev) => {
       const updated = { ...prev };
       if (updated[eventId]?.[teamId]) delete updated[eventId][teamId];
@@ -377,19 +377,16 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
 
   const toggleEditMode = (eventId: string, teamId: string) => {
     const isCurrentlyEditing = editMode[eventId]?.[teamId] ?? true;
-
     if (isCurrentlyEditing) {
       const teamParticipants = participants[eventId]?.[teamId] || [];
       const hasEmptyFields = teamParticipants.some(
         (p) => !p.name || !p.email || !p.phone
       );
-
       if (hasEmptyFields && teamParticipants.length > 0) {
         alert("Please fill all participant details before saving");
         return;
       }
     }
-
     setEditMode((prev) => ({
       ...prev,
       [eventId]: {
@@ -430,29 +427,44 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
 
   // ─── PAYMENT ─────────────────────────────────────────────────────────────────
 
-  /**
-   * Handles payment method selection.
-   *
-   * - Cash ("Pay at Desk"): same as before — calls proceedToPay, saves data,
-   *   redirects to /success.
-   *
-   * - Online: creates the order via proceedToPay (so your backend records it),
-   *   then opens the Razorpay payment link in a new tab. The user pays there
-   *   and clicks "I've Completed Payment" to confirm, which saves the
-   *   registration data and redirects to /success.
-   */
   const handlePaymentSelection = async (isCashPayment = false) => {
     try {
       const { total: finalAmount } = calculateTotalAmountWithDetails();
 
+      // ── Build flat participants + emails (needed for online email later) ──
+      const builtParticipants: { name: string; email: string; phone: string; college: string }[] = [];
+      const builtFlattenEmails: Record<string, string[]> = {};
+
+      for (const eventId of selectedEvents) {
+        const emailsForEvent: string[] = [];
+        for (const teamId of teams[eventId] || []) {
+          for (const p of participants[eventId]?.[teamId] || []) {
+            const email = (p.email || "").toLowerCase();
+            builtParticipants.push({
+              name: p.name || "",
+              email,
+              phone: p.phone || "",
+              college: p.college || userProfile.college || "",
+            });
+            emailsForEvent.push(email);
+          }
+        }
+        builtFlattenEmails[eventId] = emailsForEvent;
+      }
+
+      // Save for use in handlePaymentConfirmed
+      setAllParticipantsForEmail(builtParticipants);
+      setFlattenEmailsForEmail(builtFlattenEmails);
+
       if (isCashPayment) {
+        // Cash — backend sends email immediately inside generateOrderDetails
         await proceedToPay(participants, true, isContingent, finalAmount);
         setPaymentMethod("Pay at Desk");
         saveRegistrationData("Pay at Desk");
         window.location.href = "/success";
       } else {
+        // Online — create order, then wait for user to confirm payment
         setIsLoadingOrder(true);
-        // Create the order in your backend so it's recorded
         const order = await proceedToPay(participants, false, isContingent, finalAmount);
         setOrderData({
           orderNo: order.orderNo,
@@ -468,22 +480,31 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
     }
   };
 
-  /**
-   * Opens the Razorpay payment link in a new tab.
-   * Sets paymentLinkOpened so we show the confirmation button.
-   */
   const handleOpenPaymentLink = () => {
     window.open(RAZORPAY_PAYMENT_LINK, "_blank");
     setPaymentLinkOpened(true);
   };
 
-  /**
-   * Called when the user confirms they've completed payment.
-   * Saves registration data and redirects to /success.
-   */
-  const handlePaymentConfirmed = () => {
-    saveRegistrationData("Online");
-    window.location.href = "/success";
+  // ✅ THIS is the fixed function — now calls backend to send the email
+  const handlePaymentConfirmed = async () => {
+    try {
+      if (!orderData) return;
+
+      // ── Call backend → sends confirmation email with paymentMethod = "online"
+      await confirmOnlinePayment({
+        orderNo: orderData.orderNo,
+        participants: allParticipantsForEmail,
+        events: flattenEmailsForEmail,
+      });
+
+      console.log("✅ Online payment confirmed — email sent");
+    } catch (err) {
+      console.error("❌ Failed to confirm online payment:", err);
+      // Still redirect even if email fails — don't block the user
+    } finally {
+      saveRegistrationData("Online");
+      window.location.href = "/success";
+    }
   };
 
   // ─── HELPERS ─────────────────────────────────────────────────────────────────
@@ -521,9 +542,7 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
   };
 
   const truncateEmail = (email: string) => {
-    if (email.length > 20) {
-      return `${email.substring(0, 17)}...`;
-    }
+    if (email.length > 20) return `${email.substring(0, 17)}...`;
     return email;
   };
 
@@ -533,12 +552,8 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
     const now = new Date();
     if (now > OFFER_DEADLINE) return null;
 
-    const {
-      isContingentOffer,
-      isTechnicalOffer,
-      isGamingOffer,
-      isCulturalOffer,
-    } = calculateTotalAmountWithDetails();
+    const { isContingentOffer, isTechnicalOffer, isGamingOffer, isCulturalOffer } =
+      calculateTotalAmountWithDetails();
 
     if (isContingentOffer) return "Contingent Discount Applied (All Events - ₹2600)";
 
@@ -628,18 +643,10 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
             </h3>
             <div className="bg-gray-700 p-4 rounded">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <p>
-                  <span className="font-medium">Name:</span> {userProfile.name}
-                </p>
-                <p>
-                  <span className="font-medium">Email:</span> {userProfile.email}
-                </p>
-                <p>
-                  <span className="font-medium">Phone:</span> {userProfile.phone}
-                </p>
-                <p>
-                  <span className="font-medium">College:</span> {userProfile.college}
-                </p>
+                <p><span className="font-medium">Name:</span> {userProfile.name}</p>
+                <p><span className="font-medium">Email:</span> {userProfile.email}</p>
+                <p><span className="font-medium">Phone:</span> {userProfile.phone}</p>
+                <p><span className="font-medium">College:</span> {userProfile.college}</p>
               </div>
             </div>
           </div>
@@ -680,9 +687,7 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
                     </div>
                     <div className="text-sm text-gray-300 grid grid-cols-1 sm:grid-cols-2 gap-2">
                       <p>Teams: {teamCount}</p>
-                      <p>
-                        Base: ₹{event?.registrationFee} × {teamCount} = ₹{eventTotal}
-                      </p>
+                      <p>Base: ₹{event?.registrationFee} × {teamCount} = ₹{eventTotal}</p>
                     </div>
                     <div className="mt-4">
                       <h4 className="text-base sm:text-lg font-medium mb-2">
@@ -702,10 +707,7 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
                                     className="mb-2 bg-gray-800 p-3 rounded"
                                   >
                                     <p>{participant.name}</p>
-                                    <p
-                                      className="truncate"
-                                      title={participant.email}
-                                    >
+                                    <p className="truncate" title={participant.email}>
                                       {truncateEmail(participant.email)}
                                     </p>
                                     <p>{participant.phone}</p>
@@ -767,60 +769,28 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
                   }}
                   className="text-white hover:text-purple-400 transition-colors"
                 >
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M6 18L18 6M6 6l12 12"
-                    />
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 </button>
               </div>
 
               <div className="space-y-4">
                 {isLoadingOrder ? (
-                  /* ── Loading spinner while creating backend order ── */
                   <div className="text-center py-8">
-                    <svg
-                      className="animate-spin h-8 w-8 text-purple-500 mx-auto mb-4"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      />
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      />
+                    <svg className="animate-spin h-8 w-8 text-purple-500 mx-auto mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
                     </svg>
                     <p>Creating your order...</p>
                   </div>
+
                 ) : orderData && paymentMethod === "Online" ? (
-                  /* ── Order created → show payment link flow ── */
                   <div className="space-y-4">
-                    {/* Offer label */}
                     {offerLabel && (
-                      <p className="text-center text-sm text-green-400">
-                        ✓ {offerLabel}
-                      </p>
+                      <p className="text-center text-sm text-green-400">✓ {offerLabel}</p>
                     )}
 
-                    {/* Order details */}
                     <div className="flex justify-between items-center bg-gray-700 p-3 rounded">
                       <span className="font-medium">Order Number:</span>
                       <div className="flex items-center gap-2">
@@ -829,19 +799,8 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
                           onClick={() => copyToClipboard(orderData.orderNo.toString())}
                           className="text-purple-400 hover:text-purple-500 transition-colors"
                         >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                            />
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                           </svg>
                         </button>
                       </div>
@@ -850,52 +809,26 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
                     <div className="flex justify-between items-center bg-gray-700 p-3 rounded">
                       <span className="font-medium">Total Amount:</span>
                       <div className="flex items-center gap-2">
-                        <span className="text-purple-400 font-bold">
-                          ₹{orderData.amount}
-                        </span>
+                        <span className="text-purple-400 font-bold">₹{orderData.amount}</span>
                         <button
                           onClick={() => copyToClipboard(`${orderData.amount}`)}
                           className="text-purple-400 hover:text-purple-500 transition-colors"
                         >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
-                            />
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                           </svg>
                         </button>
                       </div>
                     </div>
 
-                    {/* Step 1 — Open payment link */}
                     {!paymentLinkOpened ? (
                       <>
                         <button
                           onClick={handleOpenPaymentLink}
                           className="w-full bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
                         >
-                          {/* External link icon */}
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-5 w-5"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
-                            />
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                           </svg>
                           Pay Now (₹{orderData.amount})
                         </button>
@@ -904,14 +837,12 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
                         </p>
                       </>
                     ) : (
-                      /* Step 2 — User has opened the link; show confirmation */
                       <div className="space-y-3">
                         <div className="bg-yellow-900 border border-yellow-600 text-yellow-200 p-3 rounded text-sm text-center">
                           Complete the payment of <strong>₹{orderData.amount}</strong> in
                           the tab that just opened, then click the button below.
                         </div>
 
-                        {/* Re-open link in case they closed it */}
                         <button
                           onClick={handleOpenPaymentLink}
                           className="w-full bg-gray-600 text-white px-6 py-2 rounded-lg hover:bg-gray-500 transition-colors text-sm"
@@ -919,7 +850,7 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
                           Re-open Payment Page
                         </button>
 
-                        {/* Confirmation button → saves data + redirect */}
+                        {/* ✅ THIS NOW CALLS BACKEND → EMAIL IS SENT */}
                         <button
                           onClick={handlePaymentConfirmed}
                           className="w-full bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 transition-colors font-semibold"
@@ -933,8 +864,8 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
                       </div>
                     )}
                   </div>
+
                 ) : (
-                  /* ── Initial choice: Online or Cash ── */
                   <>
                     <button
                       onClick={() => handlePaymentSelection(false)}
@@ -976,19 +907,8 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
             onClick={() => setShowDetails(false)}
             className="text-white hover:text-purple-400 transition-colors mr-2"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M10 19l-7-7m0 0l7-7m-7 7h18"
-              />
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
             </svg>
           </button>
         )}
@@ -1019,54 +939,50 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
                 <button
                   className="w-full text-left text-lg sm:text-xl font-bold p-3 bg-gray-700 rounded hover:bg-gray-600 transition-colors"
                   onClick={() =>
-                    setExpandedCategory(
-                      expandedCategory === category ? null : category
-                    )
+                    setExpandedCategory(expandedCategory === category ? null : category)
                   }
                 >
                   {category}{" "}
-                  {checkFullCategorySelected(category) &&
-                    new Date() <= OFFER_DEADLINE && (
-                      <span className="ml-2 text-xs bg-yellow-400 text-black px-2 py-0.5 rounded">
-                        Bundle offer active
-                      </span>
-                    )}
+                  {checkFullCategorySelected(category) && new Date() <= OFFER_DEADLINE && (
+                    <span className="ml-2 text-xs bg-yellow-400 text-black px-2 py-0.5 rounded">
+                      Bundle offer active
+                    </span>
+                  )}
                   {expandedCategory === category ? " -" : " +"}
                 </button>
-                {expandedCategory === category &&
-                  eventCategories[category]?.length > 0 && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
-                      {eventCategories[category].map((event) => (
-                        <div
-                          key={event.eventID}
-                          className={`cursor-pointer transition-all duration-300 flex flex-col items-center p-4 rounded ${
-                            selectedEvents.includes(event.eventID!)
-                              ? "ring-4 ring-purple-500 bg-gray-700"
-                              : "bg-gray-700 hover:bg-gray-600"
-                          }`}
-                          onClick={() =>
-                            handleEventToggle(
-                              event.eventID!,
-                              event.registrationFee!,
-                              event.maximumNoOfParticipants!
-                            )
-                          }
-                        >
-                          <img
-                            src={event.img || ""}
-                            alt={event.eventName}
-                            className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded"
-                          />
-                          <h3 className="text-center mt-2 text-sm sm:text-lg">
-                            {event.eventName}
-                          </h3>
-                          <p className="text-purple-400 mt-1 text-sm sm:text-base">
-                            ₹{event.registrationFee}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                {expandedCategory === category && eventCategories[category]?.length > 0 && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-4">
+                    {eventCategories[category].map((event) => (
+                      <div
+                        key={event.eventID}
+                        className={`cursor-pointer transition-all duration-300 flex flex-col items-center p-4 rounded ${
+                          selectedEvents.includes(event.eventID!)
+                            ? "ring-4 ring-purple-500 bg-gray-700"
+                            : "bg-gray-700 hover:bg-gray-600"
+                        }`}
+                        onClick={() =>
+                          handleEventToggle(
+                            event.eventID!,
+                            event.registrationFee!,
+                            event.maximumNoOfParticipants!
+                          )
+                        }
+                      >
+                        <img
+                          src={event.img || ""}
+                          alt={event.eventName}
+                          className="w-24 h-24 sm:w-32 sm:h-32 object-cover rounded"
+                        />
+                        <h3 className="text-center mt-2 text-sm sm:text-lg">
+                          {event.eventName}
+                        </h3>
+                        <p className="text-purple-400 mt-1 text-sm sm:text-base">
+                          ₹{event.registrationFee}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -1094,15 +1010,11 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
                 if (!teams[eventId]?.length) addTeam(eventId);
 
                 return (
-                  <div
-                    key={eventId}
-                    className="p-4 border border-gray-700 rounded bg-gray-700"
-                  >
+                  <div key={eventId} className="p-4 border border-gray-700 rounded bg-gray-700">
                     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
                       <h2 className="text-lg sm:text-xl font-bold">{event?.eventName}</h2>
                       <div className="text-purple-400 font-semibold text-sm sm:text-base">
-                        Base: ₹{eventTotal} ({teamCount} teams × ₹
-                        {event?.registrationFee})
+                        Base: ₹{eventTotal} ({teamCount} teams × ₹{event?.registrationFee})
                       </div>
                     </div>
                     <div className="space-y-4">
@@ -1112,73 +1024,51 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
                             {team.split("-")[0]}
                           </h3>
                           <div className="space-y-4 mt-2">
-                            {participants[eventId]?.[team]?.map(
-                              (participant, index) => (
-                                <div
-                                  key={`${team}-${index}`}
-                                  className="grid grid-cols-1 md:grid-cols-2 gap-4"
-                                >
-                                  <input
-                                    type="text"
-                                    placeholder="Co-participant Name"
-                                    className="w-full p-2 rounded bg-gray-800 text-white border border-gray-600 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-                                    value={participant.name}
-                                    onChange={(e) =>
-                                      handleParticipantChange(
-                                        eventId,
-                                        team,
-                                        index,
-                                        "name",
-                                        e.target.value
-                                      )
-                                    }
-                                    disabled={!(editMode[eventId]?.[team] ?? true)}
-                                  />
-                                  <input
-                                    type="email"
-                                    placeholder="Email"
-                                    className="w-full p-2 rounded bg-gray-800 text-white border border-gray-600 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-                                    value={participant.email}
-                                    onChange={(e) =>
-                                      handleParticipantChange(
-                                        eventId,
-                                        team,
-                                        index,
-                                        "email",
-                                        e.target.value.toLowerCase()
-                                      )
-                                    }
-                                    disabled={!(editMode[eventId]?.[team] ?? true)}
-                                  />
-                                  <input
-                                    type="tel"
-                                    placeholder="Phone Number"
-                                    className="w-full p-2 rounded bg-gray-800 text-white border border-gray-600 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
-                                    value={participant.phone}
-                                    onChange={(e) =>
-                                      handleParticipantChange(
-                                        eventId,
-                                        team,
-                                        index,
-                                        "phone",
-                                        e.target.value.replace(/\D/g, "").slice(0, 10)
-                                      )
-                                    }
-                                    disabled={!(editMode[eventId]?.[team] ?? true)}
-                                  />
-                                  {(editMode[eventId]?.[team] ?? true) && (
-                                    <button
-                                      onClick={() =>
-                                        deleteParticipant(eventId, team, index)
-                                      }
-                                      className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors w-full md:w-auto"
-                                    >
-                                      Delete
-                                    </button>
-                                  )}
-                                </div>
-                              )
-                            )}
+                            {participants[eventId]?.[team]?.map((participant, index) => (
+                              <div key={`${team}-${index}`} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <input
+                                  type="text"
+                                  placeholder="Co-participant Name"
+                                  className="w-full p-2 rounded bg-gray-800 text-white border border-gray-600 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                                  value={participant.name}
+                                  onChange={(e) =>
+                                    handleParticipantChange(eventId, team, index, "name", e.target.value)
+                                  }
+                                  disabled={!(editMode[eventId]?.[team] ?? true)}
+                                />
+                                <input
+                                  type="email"
+                                  placeholder="Email"
+                                  className="w-full p-2 rounded bg-gray-800 text-white border border-gray-600 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                                  value={participant.email}
+                                  onChange={(e) =>
+                                    handleParticipantChange(eventId, team, index, "email", e.target.value.toLowerCase())
+                                  }
+                                  disabled={!(editMode[eventId]?.[team] ?? true)}
+                                />
+                                <input
+                                  type="tel"
+                                  placeholder="Phone Number"
+                                  className="w-full p-2 rounded bg-gray-800 text-white border border-gray-600 focus:border-purple-500 focus:ring-1 focus:ring-purple-500"
+                                  value={participant.phone}
+                                  onChange={(e) =>
+                                    handleParticipantChange(
+                                      eventId, team, index, "phone",
+                                      e.target.value.replace(/\D/g, "").slice(0, 10)
+                                    )
+                                  }
+                                  disabled={!(editMode[eventId]?.[team] ?? true)}
+                                />
+                                {(editMode[eventId]?.[team] ?? true) && (
+                                  <button
+                                    onClick={() => deleteParticipant(eventId, team, index)}
+                                    className="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-colors w-full md:w-auto"
+                                  >
+                                    Delete
+                                  </button>
+                                )}
+                              </div>
+                            ))}
                             <div className="flex flex-wrap gap-2">
                               {(editMode[eventId]?.[team] ?? true) && (
                                 <>
@@ -1242,7 +1132,6 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
               })}
             </div>
 
-            {/* Live total with offer label */}
             <div className="bg-gray-800 p-4 rounded-lg my-6">
               {getOfferLabel() && (
                 <p className="text-green-400 text-sm mb-2 text-center">
@@ -1276,9 +1165,7 @@ const EventRegistration: React.FC<EventRegistrationProps> = ({
             </div>
             {!isAllSaved() && (
               <div className="mt-4 p-3 bg-yellow-900 text-yellow-200 rounded text-center">
-                <p>
-                  Note — The Contingent Early Bird Offer is valid till 24th April 2026
-                </p>
+                <p>Note — The Contingent Early Bird Offer is valid till 24th April 2026</p>
                 <p>Please save all teams before submitting.</p>
                 <p className="font-semibold mt-1">
                   Unsaved events: {getUnsavedEvents().join(", ")}

@@ -55,4 +55,26 @@ const validatePayment = async (responseData) => {
   }
 };
 
-export { proceedToPay, validatePayment };
+// ✅ NEW — called when user clicks "I've Completed the Payment"
+// Hits the backend which sends the confirmation email with paymentMethod = "online"
+const confirmOnlinePayment = async ({ orderNo, participants, events }) => {
+  try {
+    const response = await axios.post(
+      `${URL}payment/confirm-online`,
+      { orderNo, participants, events },
+      {
+        withCredentials: true,
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    console.error("❌ confirmOnlinePayment error:", error?.response?.data || error);
+    throw error;
+  }
+};
+
+export { proceedToPay, validatePayment, confirmOnlinePayment };
