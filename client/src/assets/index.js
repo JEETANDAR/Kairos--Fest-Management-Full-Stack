@@ -88,8 +88,10 @@ import kill from "./Skyll-logo11.png";
 import charle from "./charle.png";
 import gined from "./gined.png";
 import ias from "./insightslogo.png";
+import ag from "./ag.jpeg";
 
 export {
+  ag,
   ias,
   dept,
   check,
