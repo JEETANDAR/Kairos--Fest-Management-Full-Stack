@@ -372,7 +372,7 @@ const events = [
             "eventID": "GROUP_DANCE",
             "eventType": "CULTURAL",
             "eventName": "Group Dance",
-            "img": "https://t3.ftcdn.net/jpg/02/57/03/66/360_F_257036699_P75JW1i77y6ukIofLXsQ6ZsgF7Hh2LgI.jpg",
+            "img": "https://img.freepik.com/free-vector/people-dancing-background_1048-7872.jpg?semt=ais_hybrid&w=740&q=80",
             "studentCoordinator_1": "Ajiqneya",
             "studentCoordinator_2": "Suhas",
             "studentCoordinator_3": "Neetu",
