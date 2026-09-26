@@ -44,6 +44,8 @@ if (ENV === 'production') {
 } else {
     domainName = 'http://localhost:5173';
 }
+console.log("🔥 ENV:", ENV);
+console.log("🔥 CORS DOMAIN:", domainName);
 
 module.exports = {
     client_ID,
