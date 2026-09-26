@@ -46,7 +46,7 @@ export default defineConfig({
   },
   proxy: {
       "/payment": {
-        target: "http://localhost:9000", // 👈 backend
+        target: "https://kairos-backend-otd3.onrender.com", // 👈 backend
         changeOrigin: true,
         secure: false,
       },
