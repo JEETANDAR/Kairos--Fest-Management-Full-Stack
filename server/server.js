@@ -5,155 +5,593 @@ const helmet = require('helmet');
 const cors = require('cors');
 const morgan = require('morgan');
 const listEndpoints = require('express-list-endpoints');
+
+require('dotenv').config();
+
 const { domainName } = require('./utils/environmentalVariables');
-require("dotenv").config();
 
 // Routers
-const homePageDetails = require(path.join(__dirname, "Routs_Model", "General_Routs", "generalRouter"));
-const userDefinedRouts = require(path.join(__dirname, "Routs_Model", "UserDefinedRouts", "userRouts"));
-const razorpayRouter = require('./Routs_Model/Payment/payment.router');
-const coordinatorRouter = require('./Routs_Model/coordinator/coordinator.router');
+const homePageDetails = require(
+    path.join(__dirname, 'Routs_Model', 'General_Routs', 'generalRouter')
+);
 
-// Authentication logic
-const { initializeAuth, setupAuthRoutes, checkIfCoordinator } = require("./Authentication_Files/auth");
+const userDefinedRouts = require(
+    path.join(__dirname, 'Routs_Model', 'UserDefinedRouts', 'userRouts')
+);
+
+const razorpayRouter = require(
+    './Routs_Model/Payment/payment.router'
+);
+
+const coordinatorRouter = require(
+    './Routs_Model/coordinator/coordinator.router'
+);
+
+// Authentication
+const {
+    initializeAuth,
+    setupAuthRoutes,
+    checkIfCoordinator
+} = require('./Authentication_Files/auth');
+
 const { startAllProcesses } = require('./utils/startUpPrograms');
 
 const app = express();
-const PORT_NO = 9000;
 
-// ✅ Function to Start the Server AFTER startAllProcesses()
+// Render provides PORT automatically.
+// Local development will use 9000.
+const PORT_NO = process.env.PORT || 9000;
+
+
+/* =========================================================
+   START SERVER
+========================================================= */
+
 async function startServer() {
     try {
-        console.log("🔄 Running startAllProcesses...");
-        await startAllProcesses();  // ✅ Only connects DB now — no seeding
-        console.log("✅ startAllProcesses completed successfully!");
 
-        // Initialize authentication middleware
-        initializeAuth(app);
+        console.log('==========================================');
+        console.log('🚀 Starting Kairos Backend...');
+        console.log('==========================================');
 
-        // Set up authentication routes at /api/auth
-        const authRouter = express.Router();
-        setupAuthRoutes(authRouter);
-        app.use('/api/auth', authRouter);
+        console.log('🌍 NODE_ENV:', process.env.NODE_ENV);
+        console.log('🌐 CORS DOMAIN:', domainName);
+        console.log('🔌 PORT:', PORT_NO);
 
-        // CORS
+
+        /* =====================================================
+           DATABASE / STARTUP
+        ===================================================== */
+
+        console.log('🔄 Running startAllProcesses...');
+
+        await startAllProcesses();
+
+        console.log('✅ startAllProcesses completed successfully!');
+
+
+        /* =====================================================
+           CORS
+           IMPORTANT: CORS is registered BEFORE API/AUTH routes.
+        ===================================================== */
+
         const corsOptions = {
             origin: domainName,
-            methods: ['GET', 'POST'],
-            allowedHeaders: ['Content-Type', 'Authorization'],
+
+            methods: [
+                'GET',
+                'POST',
+                'PUT',
+                'PATCH',
+                'DELETE',
+                'OPTIONS'
+            ],
+
+            allowedHeaders: [
+                'Content-Type',
+                'Authorization'
+            ],
+
             credentials: true,
+
+            optionsSuccessStatus: 204
         };
+
         app.use(cors(corsOptions));
 
-        // Chalk for Color Coding the logs
-        (async () => {
-            global.chalk = await import('chalk').then(m => m.default);
-            console.log(chalk.green('Chalk is working!'));
-        })();
+        // Explicitly handle browser preflight requests
+        app.options('*', cors(corsOptions));
 
-        // Morgan Logger
-        app.use(morgan((tokens, req, res) => {
-            const status = tokens.status(req, res);
-            const statusCategory = status >= 400
-                ? chalk.bgRed.white.bold(' FAILURE ')
-                : chalk.bgGreen.black.bold(' SUCCESS ');
 
-            return [
-                statusCategory,
-                chalk.blue.bold(tokens.method(req, res)),
-                chalk.yellow(tokens.url(req, res)),
-                chalk.magenta(`Status: ${status}`),
-                chalk.cyan(`Response Time: ${tokens['response-time'](req, res)} ms`),
-                chalk.gray(`IP: ${tokens['remote-addr'](req, res)}`),
-                chalk.white(`User-Agent: ${tokens['user-agent'](req, res)}`)
-            ].join(' | ');
-        }));
+        /* =====================================================
+           SECURITY
+        ===================================================== */
 
-        // Middleware
-        app.use(helmet({ contentSecurityPolicy: false }));
-        app.use(express.json());
-
-        // API Routes
-        app.use('/api/', homePageDetails);
-        app.use('/api/userRout', userDefinedRouts);
-        app.use('/api/payment', razorpayRouter);
-        app.use('/api/coordinator', checkIfCoordinator, coordinatorRouter);
-
-        // ✅ Participants Data API
-        const Order = require('./schema/Payment/orderNO.schema');
-        const UserData = require('./schema/Users/UserData.schema');
-
-        app.get('/api/participants', async (req, res) => {
-            try {
-                const orders = await Order.find({}).lean();
-                const results = [];
-
-                for (const order of orders) {
-                    const emails = order.emails || [];
-
-                    const userMap = {};
-                    const usersFound = await UserData.find({ emailID: { $in: emails } })
-                        .lean()
-                        .select({ emailID: 1, name: 1, phoneNo: 1, collegeName: 1 });
-
-                    for (const u of usersFound) {
-                        userMap[u.emailID.toLowerCase()] = u;
-                    }
-
-                    for (const email of emails) {
-                        const userInfo = userMap[email.toLowerCase()];
-                        results.push({
-                            name: (userInfo && userInfo.name) ? userInfo.name : email.split('@')[0],
-                            email: email,
-                            phone: (userInfo && userInfo.phoneNo) ? userInfo.phoneNo : '',
-                            college: (userInfo && userInfo.collegeName) ? userInfo.collegeName : '',
-                            events: order.events,
-                            paymentMethod: order.paymentMethod,
-                            amount: order.amount,
-                            orderNo: order.orderNo,
-                        });
-                    }
-                }
-
-                res.json(results);
-            } catch (err) {
-                console.error("Participants API Error:", err);
-                res.status(500).json({ error: "Failed to fetch participants" });
-            }
-        });
-
-        // Endpoint to View All Routes
-        app.get('/routes', (req, res) => {
-            res.json(listEndpoints(app));
-        });
-
-        // Serve static files from server/public
-        app.use(express.static(path.join(__dirname, 'public')));
-
-        // Catch-all route to serve index.html for unmatched routes (SPA)
-        app.get('*', (req, res) => {
-            res.sendFile(path.join(__dirname, 'public', 'index.html'));
-        });
-
-        // Endpoint to log frontend route changes
-        app.post('/route-log', express.json(), (req, res) => {
-            const { path, timestamp } = req.body;
-            console.log(`[ROUTE LOG] ${timestamp}: ${path}`);
-            res.status(204).end();
-        });
-
-        // Create and start server
-        const server = http.createServer(app);
-        server.listen(PORT_NO, () =>
-            console.log(`🚀 Server is running on http://localhost:${PORT_NO} & Node Env ${process.env.NODE_ENV}`)
+        app.use(
+            helmet({
+                contentSecurityPolicy: false
+            })
         );
 
+
+        /* =====================================================
+           BODY PARSERS
+        ===================================================== */
+
+        app.use(express.json());
+
+        app.use(express.urlencoded({ extended: true }));
+
+
+        /* =====================================================
+           CHALK
+        ===================================================== */
+
+        (async () => {
+            try {
+                global.chalk = await import('chalk').then(
+                    module => module.default
+                );
+
+                console.log(
+                    chalk.green('✅ Chalk is working!')
+                );
+            } catch (error) {
+                console.error(
+                    '⚠️ Chalk initialization failed:',
+                    error
+                );
+            }
+        })();
+
+
+        /* =====================================================
+           MORGAN LOGGER
+        ===================================================== */
+
+        app.use(
+            morgan((tokens, req, res) => {
+
+                const status = tokens.status(req, res);
+
+                let statusCategory;
+
+                if (status >= 400) {
+                    statusCategory = chalk
+                        ? chalk.bgRed.white.bold(' FAILURE ')
+                        : ' FAILURE ';
+                } else {
+                    statusCategory = chalk
+                        ? chalk.bgGreen.black.bold(' SUCCESS ')
+                        : ' SUCCESS ';
+                }
+
+                return [
+                    statusCategory,
+
+                    chalk
+                        ? chalk.blue.bold(
+                            tokens.method(req, res)
+                        )
+                        : tokens.method(req, res),
+
+                    chalk
+                        ? chalk.yellow(
+                            tokens.url(req, res)
+                        )
+                        : tokens.url(req, res),
+
+                    chalk
+                        ? chalk.magenta(
+                            `Status: ${status}`
+                        )
+                        : `Status: ${status}`,
+
+                    chalk
+                        ? chalk.cyan(
+                            `Response Time: ${
+                                tokens['response-time'](req, res)
+                            } ms`
+                        )
+                        : `Response Time: ${
+                            tokens['response-time'](req, res)
+                        } ms`,
+
+                    chalk
+                        ? chalk.gray(
+                            `IP: ${
+                                tokens['remote-addr'](req, res)
+                            }`
+                        )
+                        : `IP: ${
+                            tokens['remote-addr'](req, res)
+                        }`,
+
+                    chalk
+                        ? chalk.white(
+                            `User-Agent: ${
+                                tokens['user-agent'](req, res)
+                            }`
+                        )
+                        : `User-Agent: ${
+                            tokens['user-agent'](req, res)
+                        }`
+
+                ].join(' | ');
+            })
+        );
+
+
+        /* =====================================================
+           AUTHENTICATION
+        ===================================================== */
+
+        initializeAuth(app);
+
+        const authRouter = express.Router();
+
+        setupAuthRoutes(authRouter);
+
+        app.use('/api/auth', authRouter);
+
+
+        /* =====================================================
+           API ROUTES
+        ===================================================== */
+
+        app.use('/api/', homePageDetails);
+
+        app.use(
+            '/api/userRout',
+            userDefinedRouts
+        );
+
+        app.use(
+            '/api/payment',
+            razorpayRouter
+        );
+
+        app.use(
+            '/api/coordinator',
+            checkIfCoordinator,
+            coordinatorRouter
+        );
+
+
+        /* =====================================================
+           PARTICIPANTS API
+        ===================================================== */
+
+        const Order = require(
+            './schema/Payment/orderNO.schema'
+        );
+
+        const UserData = require(
+            './schema/Users/UserData.schema'
+        );
+
+        app.get(
+            '/api/participants',
+            async (req, res) => {
+
+                try {
+
+                    const orders = await Order
+                        .find({})
+                        .lean();
+
+                    const results = [];
+
+                    for (const order of orders) {
+
+                        const emails = order.emails || [];
+
+                        const userMap = {};
+
+                        const usersFound = await UserData
+                            .find({
+                                emailID: {
+                                    $in: emails
+                                }
+                            })
+                            .lean()
+                            .select({
+                                emailID: 1,
+                                name: 1,
+                                phoneNo: 1,
+                                collegeName: 1
+                            });
+
+
+                        for (const user of usersFound) {
+
+                            if (user.emailID) {
+
+                                userMap[
+                                    user.emailID.toLowerCase()
+                                ] = user;
+
+                            }
+
+                        }
+
+
+                        for (const email of emails) {
+
+                            const userInfo =
+                                userMap[
+                                    email.toLowerCase()
+                                ];
+
+
+                            results.push({
+
+                                name:
+                                    userInfo &&
+                                    userInfo.name
+                                        ? userInfo.name
+                                        : email.split('@')[0],
+
+                                email: email,
+
+                                phone:
+                                    userInfo &&
+                                    userInfo.phoneNo
+                                        ? userInfo.phoneNo
+                                        : '',
+
+                                college:
+                                    userInfo &&
+                                    userInfo.collegeName
+                                        ? userInfo.collegeName
+                                        : '',
+
+                                events:
+                                    order.events,
+
+                                paymentMethod:
+                                    order.paymentMethod,
+
+                                amount:
+                                    order.amount,
+
+                                orderNo:
+                                    order.orderNo
+                            });
+
+                        }
+
+                    }
+
+
+                    res.status(200).json(results);
+
+                } catch (error) {
+
+                    console.error(
+                        '❌ Participants API Error:',
+                        error
+                    );
+
+                    res.status(500).json({
+                        error:
+                            'Failed to fetch participants'
+                    });
+
+                }
+
+            }
+        );
+
+
+        /* =====================================================
+           HEALTH CHECK
+        ===================================================== */
+
+        app.get(
+            '/',
+            (req, res) => {
+
+                res.status(200).json({
+
+                    success: true,
+
+                    message:
+                        'Kairos Backend API is running 🚀',
+
+                    environment:
+                        process.env.NODE_ENV || 'development',
+
+                    frontend:
+                        domainName,
+
+                    timestamp:
+                        new Date().toISOString()
+
+                });
+
+            }
+        );
+
+
+        /* =====================================================
+           API HEALTH CHECK
+        ===================================================== */
+
+        app.get(
+            '/api/health',
+            (req, res) => {
+
+                res.status(200).json({
+
+                    success: true,
+
+                    message:
+                        'Kairos API is healthy',
+
+                    timestamp:
+                        new Date().toISOString()
+
+                });
+
+            }
+        );
+
+
+        /* =====================================================
+           VIEW ALL ROUTES
+        ===================================================== */
+
+        app.get(
+            '/routes',
+            (req, res) => {
+
+                res.status(200).json(
+                    listEndpoints(app)
+                );
+
+            }
+        );
+
+
+        /* =====================================================
+           FRONTEND ROUTE LOGGER
+        ===================================================== */
+
+        app.post(
+            '/route-log',
+            (req, res) => {
+
+                const {
+                    path: routePath,
+                    timestamp
+                } = req.body || {};
+
+                console.log(
+                    `[ROUTE LOG] ${timestamp || new Date().toISOString()}: ${
+                        routePath || 'unknown'
+                    }`
+                );
+
+                res.status(204).end();
+
+            }
+        );
+
+
+        /* =====================================================
+           404 API HANDLER
+        ===================================================== */
+
+        app.use(
+            (req, res) => {
+
+                res.status(404).json({
+
+                    success: false,
+
+                    message:
+                        'API route not found',
+
+                    path:
+                        req.originalUrl
+
+                });
+
+            }
+        );
+
+
+        /* =====================================================
+           GLOBAL ERROR HANDLER
+        ===================================================== */
+
+        app.use(
+            (error, req, res, next) => {
+
+                console.error(
+                    '❌ Server Error:',
+                    error
+                );
+
+                res.status(
+                    error.status || 500
+                ).json({
+
+                    success: false,
+
+                    message:
+                        error.message ||
+                        'Internal server error'
+
+                });
+
+            }
+        );
+
+
+        /* =====================================================
+           CREATE SERVER
+        ===================================================== */
+
+        const server =
+            http.createServer(app);
+
+
+        server.listen(
+            PORT_NO,
+            '0.0.0.0',
+            () => {
+
+                console.log('');
+                console.log(
+                    '=========================================='
+                );
+
+                console.log(
+                    '🚀 KAIROS BACKEND IS RUNNING'
+                );
+
+                console.log(
+                    `🔌 PORT: ${PORT_NO}`
+                );
+
+                console.log(
+                    `🌍 NODE_ENV: ${
+                        process.env.NODE_ENV || 'development'
+                    }`
+                );
+
+                console.log(
+                    `🌐 CORS: ${domainName}`
+                );
+
+                console.log(
+                    '=========================================='
+                );
+
+            }
+        );
+
+
     } catch (error) {
-        console.error("❌ Error in startServer:", error);
+
+        console.error(
+            '❌ Error in startServer:',
+            error
+        );
+
         process.exit(1);
+
     }
 }
 
+
+/* =========================================================
+   START APPLICATION
+========================================================= */
+
 startServer();
+
 
 module.exports = app;
